@@ -1,19 +1,30 @@
 import { db } from "./firebase-config.js";
-import { collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 let cart = [];
 let allProducts = [];
 let currentPayMethod = "CASH";
 let currentCategory = "semua";
+let currentUserRole = "kasir";
 
-// 1. LOGIN ADMIN
+// 1. AUTENTIKASI LOGIN (MEMBEDAKAN ROLE KASIR & ADMIN)
 document.getElementById('login-form').addEventListener('submit', (e) => {
   e.preventDefault();
+  const role = document.getElementById('login-role').value;
   const u = document.getElementById('login-user').value;
   const p = document.getElementById('login-pass').value;
-  if(u === 'admin' && p === '1234') {
+
+  if (role === 'admin' && u === 'admin' && p === '1234') {
+    currentUserRole = 'admin';
     document.getElementById('login-modal').classList.add('hidden');
-    document.getElementById('current-user-display').innerText = u;
+    document.getElementById('current-user-display').innerText = "Admin System";
+    document.getElementById('open-admin-btn').classList.remove('hidden');
+    document.getElementById('login-error').classList.add('hidden');
+  } else if (role === 'kasir' && u === 'kasir' && p === 'kasir123') {
+    currentUserRole = 'kasir';
+    document.getElementById('login-modal').classList.add('hidden');
+    document.getElementById('current-user-display').innerText = "Mode Kasir";
+    document.getElementById('open-admin-btn').classList.add('hidden');
     document.getElementById('login-error').classList.add('hidden');
   } else {
     document.getElementById('login-error').classList.remove('hidden');
@@ -25,13 +36,63 @@ document.getElementById('logout-btn').addEventListener('click', () => {
 });
 
 document.getElementById('open-admin-btn').addEventListener('click', () => {
-  document.getElementById('admin-modal').classList.remove('hidden');
+  if (currentUserRole === 'admin') {
+    document.getElementById('admin-modal').classList.remove('hidden');
+  }
 });
 document.getElementById('close-admin-btn').addEventListener('click', () => {
   document.getElementById('admin-modal').classList.add('hidden');
 });
 
-// 2. AUTO UPLOAD FOTO KE IMGUR & SIMPAN KE FIRESTORE
+// 2. KELOLA KASIR / SISWA (ADMIN PANEL)
+document.getElementById('add-cashier-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const cashierName = document.getElementById('cashier-name-input').value.trim();
+  if(!cashierName) return;
+
+  try {
+    await addDoc(collection(db, "cashiers"), {
+      name: cashierName,
+      createdAt: serverTimestamp()
+    });
+    document.getElementById('cashier-name-input').value = '';
+    loadCashiers();
+  } catch (err) {
+    console.error("Gagal menambah kasir:", err);
+  }
+});
+
+async function loadCashiers() {
+  const cashierSelect = document.getElementById('cashier-select');
+  const cashierListAdmin = document.getElementById('cashier-list-admin');
+  cashierSelect.innerHTML = '<option value="">-- Pilih Nama Kasir / Siswa --</option>';
+  cashierListAdmin.innerHTML = '';
+
+  try {
+    const snap = await getDocs(collection(db, "cashiers"));
+    snap.forEach((d) => {
+      const data = d.data();
+      cashierSelect.innerHTML += `<option value="${data.name}">${data.name}</option>`;
+      cashierListAdmin.innerHTML += `
+        <span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded flex items-center">
+          ${data.name}
+          <button onclick="removeCashier('${d.id}')" class="ml-1 text-red-600 hover:text-red-800 font-bold">&times;</button>
+        </span>
+      `;
+    });
+  } catch (err) {
+    console.error("Gagal memuat kasir:", err);
+  }
+}
+
+window.removeCashier = async (id) => {
+  if(confirm("Hapus kasir ini?")) {
+    await deleteDoc(doc(db, "cashiers", id));
+    loadCashiers();
+  }
+};
+
+// 3. UPLOAD MENU BARU (IMGUR & FIRESTORE)
 document.getElementById('add-product-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = document.getElementById('save-product-btn');
@@ -45,26 +106,19 @@ document.getElementById('add-product-form').addEventListener('submit', async (e)
     const fileInput = document.getElementById('prod-image-file');
     const file = fileInput.files[0];
 
-    // Upload ke Imgur API secara publik
     const formData = new FormData();
     formData.append("image", file);
 
     const imgurResponse = await fetch("https://api.imgur.com/3/image", {
       method: "POST",
-      headers: {
-        Authorization: "Client-ID c982d61d56223b2"
-      },
+      headers: { Authorization: "Client-ID c982d61d56223b2" },
       body: formData
     });
 
     const imgurData = await imgurResponse.json();
-
-    if (!imgurData.success) {
-      throw new Error("Gagal mengunggah gambar ke Imgur");
-    }
+    if (!imgurData.success) throw new Error("Gagal mengunggah foto.");
 
     const imageUrl = imgurData.data.link;
-    btn.innerText = "Menyimpan ke Database...";
 
     await addDoc(collection(db, "products"), {
       name,
@@ -79,15 +133,15 @@ document.getElementById('add-product-form').addEventListener('submit', async (e)
     document.getElementById('admin-modal').classList.add('hidden');
     loadProducts();
   } catch (err) {
-    console.error("Gagal menambah menu:", err);
-    alert("Terjadi kesalahan saat mengunggah menu.");
+    console.error("Error upload product:", err);
+    alert("Terjadi kesalahan saat menyimpan menu.");
   } finally {
     btn.innerText = "Simpan & Upload Menu";
     btn.disabled = false;
   }
 });
 
-// 3. LOAD MENU DARI DATABASE
+// 4. LOAD MENU KE KATALOG
 async function loadProducts() {
   const grid = document.getElementById('product-grid');
   grid.innerHTML = '<p class="text-xs text-gray-400 col-span-4 text-center py-10">Memuat menu...</p>';
@@ -156,7 +210,7 @@ document.querySelectorAll('#cat-tabs button').forEach(btn => {
   });
 });
 
-// 4. KERANJANG & METODE BAYAR
+// 5. KERANJANG & METODE PEMBAYARAN
 function addToCart(prod) {
   const existing = cart.find(i => i.id === prod.id);
   if(existing) {
@@ -239,16 +293,21 @@ function calcChange() {
   document.getElementById('change-amount').innerText = 'Rp ' + (change > 0 ? change.toLocaleString('id-ID') : '0');
 }
 
-// 5. SIMPAN TRANSAKSI
+// 6. PROSES SIMPAN TRANSAKSI + CETAK STRUK KASIR
 document.getElementById('process-order-btn').addEventListener('click', async () => {
   if(cart.length === 0) return alert('Pilih pesanan terlebih dahulu!');
+  
+  const cashierName = document.getElementById('cashier-select').value;
+  if(!cashierName) return alert('Silakan pilih Nama Kasir / Siswa yang bertugas!');
 
   const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
   const pay = currentPayMethod === 'QRIS' ? total : (parseFloat(document.getElementById('pay-amount').value) || 0);
   if(currentPayMethod === 'CASH' && pay < total) return alert('Uang pembayaran kurang!');
 
   try {
+    // Simpan ke Firestore (Mencantumkan Nama Kasir / Siswa)
     await addDoc(collection(db, "orders"), {
+      cashierName: cashierName,
       customerName: document.getElementById('customer-select').value,
       tableNumber: document.getElementById('table-no').value || "-",
       paymentMethod: currentPayMethod,
@@ -259,7 +318,10 @@ document.getElementById('process-order-btn').addEventListener('click', async () 
       createdAt: serverTimestamp()
     });
 
-    alert("Transaksi Berhasil Disimpan!");
+    // Otomatis Cetak Struk Kasir setelah Simpan
+    printReceipt('kasir', cashierName);
+
+    alert(`Transaksi Berhasil Disimpan oleh Kasir: ${cashierName}!`);
     cart = [];
     document.getElementById('pay-amount').value = '';
     renderCart();
@@ -269,12 +331,17 @@ document.getElementById('process-order-btn').addEventListener('click', async () 
   }
 });
 
-// 6. STRUK & EXCEL
-document.getElementById('print-kasir-btn').addEventListener('click', () => printReceipt('kasir'));
-document.getElementById('print-kitchen-btn').addEventListener('click', () => printReceipt('kitchen'));
-document.getElementById('print-drink-btn').addEventListener('click', () => printReceipt('drink'));
+// 7. CETAK STRUK & EXCEL (TERCANTUM NAMA KASIR / SISWA)
+document.getElementById('print-kitchen-btn').addEventListener('click', () => {
+  const cashier = document.getElementById('cashier-select').value || "Kasir";
+  printReceipt('kitchen', cashier);
+});
+document.getElementById('print-drink-btn').addEventListener('click', () => {
+  const cashier = document.getElementById('cashier-select').value || "Kasir";
+  printReceipt('drink', cashier);
+});
 
-function printReceipt(type) {
+function printReceipt(type, cashier) {
   if(cart.length === 0) return alert('Keranjang belanja masih kosong!');
   const customer = document.getElementById('customer-select').value;
   const table = document.getElementById('table-no').value || '-';
@@ -292,15 +359,16 @@ function printReceipt(type) {
     itemsToPrint = cart.filter(i => i.category === 'minuman' || i.category === 'paket');
   }
 
-  let printText = `${receiptTitle}\nResto: CHICKEN FIRE MATARAM\nPelanggan: ${customer}\nMeja: ${table}\nMetode: ${currentPayMethod}\n--------------------------------\n`;
+  let printText = `${receiptTitle}\nResto: CHICKEN FIRE MATARAM\nKasir (Petugas): ${cashier}\nPelanggan: ${customer}\nMeja: ${table}\nMetode: ${currentPayMethod}\n--------------------------------\n`;
   itemsToPrint.forEach(i => {
-    printText += `${i.name} x${i.qty}\n`;
+    printText += `${i.name} x${i.qty} = Rp ${(i.price * i.qty).toLocaleString('id-ID')}\n`;
   });
-  printText += `--------------------------------\nSiap Cetak Thermal Bluetooth`;
+  printText += `--------------------------------\nTerima Kasih Atas Kunjungan Anda!`;
 
   alert(printText);
 }
 
+// EXPORT LAPORAN EXCEL (TERCANTUM KOLOM "INPUT OLEH KASIR")
 document.getElementById('export-excel-btn').addEventListener('click', async () => {
   try {
     const querySnapshot = await getDocs(collection(db, "orders"));
@@ -312,6 +380,7 @@ document.getElementById('export-excel-btn').addEventListener('click', async () =
       reportData.push({
         "ID Transaksi": doc.id,
         "Tanggal": dateStr,
+        "Input Oleh Kasir": data.cashierName || "-",
         "Nama Pelanggan": data.customerName,
         "No Meja": data.tableNumber,
         "Metode Bayar": data.paymentMethod,
@@ -333,4 +402,6 @@ document.getElementById('export-excel-btn').addEventListener('click', async () =
   }
 });
 
+// Inisialisasi awal
+loadCashiers();
 loadProducts();
