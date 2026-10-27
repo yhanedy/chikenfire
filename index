@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POS Rumah Makan</title>
+  <!-- CDN Tailwind CSS & FontAwesome Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- CDN SheetJS untuk Export Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body class="bg-gray-100 font-sans h-screen flex flex-col overflow-hidden">
+
+  <!-- TOP HEADER BAR -->
+  <header class="bg-red-600 text-white px-4 py-2.5 flex items-center justify-between shadow-md">
+    <div class="flex items-center space-x-3">
+      <button id="btn-menu" class="text-xl focus:outline-none"><i class="fas fa-bars"></i></button>
+      <div class="flex items-center space-x-2">
+        <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold">A</div>
+        <div class="leading-tight">
+          <div class="font-bold text-sm" id="user-display-name">Admin Rumah Makan</div>
+          <span class="text-xs text-red-100">Kasir / Admin</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kolom Cari & Input Pelanggan / Meja -->
+    <div class="flex items-center space-x-2 w-1/2">
+      <div class="relative w-full">
+        <input type="text" id="search-product" placeholder="Cari Produk..." class="w-full pl-9 pr-3 py-1.5 rounded-md text-gray-800 text-sm focus:outline-none">
+        <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
+      </div>
+      
+      <!-- No Meja & Pelanggan -->
+      <input type="text" id="table-number" placeholder="Meja (cth: 01)" class="w-28 px-3 py-1.5 rounded-md text-gray-800 text-sm focus:outline-none">
+      
+      <button onclick="openCustomerModal()" class="bg-white text-red-600 font-semibold px-3 py-1.5 rounded-md text-sm whitespace-nowrap hover:bg-red-50 transition">
+        <i class="fas fa-user-plus mr-1"></i> Pelanggan
+      </button>
+
+      <button onclick="openAdminModal()" class="bg-red-800 text-white font-semibold px-3 py-1.5 rounded-md text-sm whitespace-nowrap hover:bg-red-900 transition">
+        <i class="fas fa-cog mr-1"></i> Admin Panel
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN AREA (Split Left & Right Panel) -->
+  <div class="flex flex-1 overflow-hidden">
+    
+    <!-- LEFT PANEL: KATALOG PRODUK -->
+    <div class="w-7/12 md:w-8/12 p-4 flex flex-col h-full border-r border-gray-200 bg-white">
+      
+      <!-- Tab Kategori (Semua, Makanan, Minuman, Paket) -->
+      <div class="flex space-x-4 border-b border-gray-200 mb-4 pb-1">
+        <button onclick="filterCategory('semua')" class="tab-btn font-bold text-red-600 border-b-2 border-red-600 pb-2 px-1 text-sm">Semua</button>
+        <button onclick="filterCategory('makanan')" class="tab-btn font-semibold text-gray-500 hover:text-red-600 pb-2 px-1 text-sm">Makanan</button>
+        <button onclick="filterCategory('minuman')" class="tab-btn font-semibold text-gray-500 hover:text-red-600 pb-2 px-1 text-sm">Minuman</button>
+        <button onclick="filterCategory('paket')" class="tab-btn font-semibold text-gray-500 hover:text-red-600 pb-2 px-1 text-sm">Paket</button>
+      </div>
+
+      <!-- Grid Cards Produk -->
+      <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 overflow-y-auto pr-1 pb-16">
+        <!-- Item Produk Dummy (Dinamis via Firestore) -->
+        <div class="bg-white border rounded-lg overflow-hidden shadow-sm hover:shadow-md cursor-pointer transition" onclick="addToCart('1', 'Ayam Bakar Madu', 25000)">
+          <img src="https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=300" alt="Ayam Bakar" class="w-full h-28 object-cover">
+          <div class="p-2.5">
+            <h4 class="font-bold text-gray-800 text-xs truncate">Ayam Bakar Madu</h4>
+            <p class="text-red-600 font-extrabold text-xs mt-1">Rp 25.000</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: DAFTAR PESANAN & BAYAR -->
+    <div class="w-5/12 md:w-4/12 bg-gray-50 flex flex-col h-full justify-between">
+      
+      <!-- Cart Header & List -->
+      <div class="p-4 flex flex-col h-full overflow-hidden">
+        <div class="flex justify-between items-center border-b pb-2 mb-2">
+          <h3 class="font-bold text-gray-800 text-base">Daftar Pesanan</h3>
+          <button onclick="clearCart()" class="text-xs text-red-500 hover:underline">Hapus Semua</button>
+        </div>
+
+        <div id="cart-list" class="flex-1 overflow-y-auto space-y-3 pr-1">
+          <!-- Item pesanan yang dipilih akan muncul di sini secara dinamis -->
+        </div>
+      </div>
+
+      <!-- Bottom Summary & Action Buttons -->
+      <div class="bg-white border-t p-4 shadow-lg space-y-3">
+        <div class="flex justify-between items-center text-sm">
+          <span class="text-gray-500">Nama Pelanggan:</span>
+          <span id="selected-customer-name" class="font-bold text-gray-800">Umum</span>
+        </div>
+        <div class="flex justify-between items-center text-sm">
+          <span class="text-gray-500">No. Meja:</span>
+          <span id="selected-table-no" class="font-bold text-gray-800">-</span>
+        </div>
+        
+        <div class="flex justify-between items-center pt-2 border-t">
+          <span class="text-base font-bold text-gray-800">Total</span>
+          <span id="cart-total" class="text-xl font-extrabold text-red-600">Rp 0</span>
+        </div>
+
+        <!-- Input Pembayaran -->
+        <div class="flex space-x-2">
+          <input type="number" id="pay-amount" placeholder="Nominal Bayar (Rp)" oninput="calculateChange()" class="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-red-500">
+        </div>
+        <div class="flex justify-between items-center text-xs text-gray-500">
+          <span>Kembalian:</span>
+          <span id="change-amount" class="font-bold text-gray-800">Rp 0</span>
+        </div>
+
+        <!-- Tombol Aksi -->
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <button onclick="connectAndPrintBluetooth()" class="bg-gray-800 text-white font-bold py-2.5 rounded-md text-sm hover:bg-gray-900 transition flex items-center justify-center">
+            <i class="fas fa-print mr-2"></i> Cetak Struk
+          </button>
+          <button onclick="processPayment()" class="bg-red-600 text-white font-bold py-2.5 rounded-md text-sm hover:bg-red-700 transition">
+            Bayar & Simpan
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>
