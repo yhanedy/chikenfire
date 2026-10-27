@@ -8,7 +8,6 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
-    /* Styling khusus warna Bendera Merah Putih & Scrollbar */
     .bg-merah-id { background-color: #E70011; }
     .text-merah-id { color: #E70011; }
     .border-merah-id { border-color: #E70011; }
@@ -18,7 +17,7 @@
 </head>
 <body class="bg-gray-100 font-sans h-screen flex flex-col overflow-hidden">
 
-  <!-- MODAL LOGIN ADMIN (Muncul di Awal) -->
+  <!-- MODAL LOGIN ADMIN -->
   <div id="login-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
     <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden border-t-8 border-red-600">
       <div class="bg-merah-id text-white p-6 text-center">
@@ -26,7 +25,7 @@
         <h2 class="text-2xl font-extrabold tracking-wide uppercase">Chicken Fire Mataram</h2>
         <p class="text-xs text-red-100 mt-1">Sistem Kasir & Manajemen Restoran</p>
       </div>
-      <form id="login-form" onsubmit="handleLogin(event)" class="p-6 space-y-4">
+      <form id="login-form" class="p-6 space-y-4">
         <div>
           <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Nama Admin / Username</label>
           <div class="relative">
@@ -49,7 +48,68 @@
     </div>
   </div>
 
-  <!-- TOP HEADER BAR (Merah Putih Theme) -->
+  <!-- MODAL ADMIN PANEL (Tambah Menu & Rekapan Omset) -->
+  <div id="admin-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-40 hidden">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+      <div class="bg-merah-id text-white px-5 py-3 flex justify-between items-center">
+        <h3 class="font-bold text-base"><i class="fas fa-cog mr-2"></i> Panel Kelola Admin</h3>
+        <button id="close-admin-btn" class="text-white hover:text-gray-200 text-lg font-bold">&times;</button>
+      </div>
+      
+      <div class="p-5 overflow-y-auto space-y-6">
+        <!-- Form Tambah Menu -->
+        <div class="border rounded-lg p-4 bg-gray-50 space-y-3">
+          <h4 class="font-bold text-gray-800 text-sm border-b pb-2"><i class="fas fa-plus-circle text-red-600 mr-1"></i> Tambah Menu Makanan / Minuman / Paket</h4>
+          <form id="add-product-form" class="space-y-3">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs font-bold text-gray-600 block mb-1">Nama Menu</label>
+                <input type="text" id="prod-name" required placeholder="Cth: Ayam Lava Super" class="w-full border rounded-md p-2 text-xs">
+              </div>
+              <div>
+                <label class="text-xs font-bold text-gray-600 block mb-1">Kategori</label>
+                <select id="prod-category" class="w-full border rounded-md p-2 text-xs">
+                  <option value="makanan">Makanan</option>
+                  <option value="minuman">Minuman</option>
+                  <option value="paket">Paket</option>
+                </select>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs font-bold text-gray-600 block mb-1">Harga (Rp)</label>
+                <input type="number" id="prod-price" required placeholder="Cth: 25000" class="w-full border rounded-md p-2 text-xs">
+              </div>
+              <div>
+                <label class="text-xs font-bold text-gray-600 block mb-1">Upload Foto Menu</label>
+                <input type="file" id="prod-image" accept="image/*" required class="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100">
+              </div>
+            </div>
+            <button type="submit" id="save-product-btn" class="w-full bg-merah-id text-white font-bold py-2 rounded-md text-xs hover:bg-red-700 transition">
+              <i class="fas fa-upload mr-1"></i> Simpan & Upload Menu
+            </button>
+          </form>
+        </div>
+
+        <!-- Rekapan Omset & Export Excel -->
+        <div class="border rounded-lg p-4 bg-gray-50 space-y-3">
+          <h4 class="font-bold text-gray-800 text-sm border-b pb-2"><i class="fas fa-file-excel text-green-600 mr-1"></i> Rekapan Omset & Export Excel</h4>
+          <div class="flex items-center space-x-2">
+            <select id="report-filter" class="border rounded-md p-2 text-xs font-bold text-gray-700">
+              <option value="hari">Hari Ini</option>
+              <option value="minggu">Minggu Ini</option>
+              <option value="bulan">Bulan Ini</option>
+            </select>
+            <button id="export-excel-btn" class="bg-green-600 text-white font-bold px-4 py-2 rounded-md text-xs hover:bg-green-700 transition">
+              <i class="fas fa-download mr-1"></i> Download File Excel (.xlsx)
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOP HEADER BAR -->
   <header class="bg-merah-id text-white px-5 py-2.5 flex items-center justify-between shadow-lg border-b-4 border-white">
     <div class="flex items-center space-x-3">
       <div class="bg-white text-merah-id p-2 rounded-lg font-black text-xl shadow">
@@ -61,77 +121,121 @@
       </div>
     </div>
 
-    <!-- User Logged In & Search Bar -->
     <div class="flex items-center space-x-3 w-7/12">
       <div class="relative w-full">
         <input type="text" id="search-product" placeholder="Cari Makanan, Minuman, Paket..." class="w-full pl-9 pr-3 py-1.5 rounded-lg text-gray-800 text-sm focus:outline-none shadow-inner">
         <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
       </div>
 
-      <!-- Button Admin Panel & Logout -->
       <div class="flex items-center space-x-2 whitespace-nowrap">
         <span id="current-user-display" class="bg-white/20 text-white text-xs font-bold px-3 py-1.5 rounded-lg">Admin</span>
-        <button onclick="openAdminModal()" class="bg-white text-merah-id font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-gray-100 transition shadow">
+        <button id="open-admin-btn" class="bg-white text-merah-id font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-gray-100 transition shadow">
           <i class="fas fa-cog mr-1"></i> Admin Panel
         </button>
-        <button onclick="logout()" class="bg-red-900 text-white font-bold px-2.5 py-1.5 rounded-lg text-xs hover:bg-red-950 transition">
+        <button id="logout-btn" class="bg-red-900 text-white font-bold px-2.5 py-1.5 rounded-lg text-xs hover:bg-red-950 transition">
           <i class="fas fa-power-off"></i>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- MAIN CONTAINER (Split POS Layout) -->
+  <!-- MAIN CONTAINER -->
   <div class="flex flex-1 overflow-hidden">
 
     <!-- LEFT PANEL: KATALOG PRODUK -->
     <div class="w-7/12 md:w-8/12 p-4 flex flex-col h-full bg-white border-r border-gray-200">
       
       <!-- Tab Kategori -->
-      <div class="flex space-x-2 border-b-2 border-red-600 mb-3 pb-1">
-        <button onclick="filterCategory('semua')" class="cat-btn bg-merah-id text-white font-bold px-4 py-1.5 rounded-t-lg text-xs">Semua</button>
-        <button onclick="filterCategory('makanan')" class="cat-btn bg-gray-100 text-gray-700 font-bold px-4 py-1.5 rounded-t-lg text-xs hover:bg-red-50">Makanan</button>
-        <button onclick="filterCategory('minuman')" class="cat-btn bg-gray-100 text-gray-700 font-bold px-4 py-1.5 rounded-t-lg text-xs hover:bg-red-50">Minuman</button>
-        <button onclick="filterCategory('paket')" class="cat-btn bg-gray-100 text-gray-700 font-bold px-4 py-1.5 rounded-t-lg text-xs hover:bg-red-50">Paket</button>
+      <div class="flex space-x-2 border-b-2 border-red-600 mb-3 pb-1" id="cat-tabs">
+        <button data-cat="semua" class="cat-btn bg-merah-id text-white font-bold px-4 py-1.5 rounded-t-lg text-xs">Semua</button>
+        <button data-cat="makanan" class="cat-btn bg-gray-100 text-gray-700 font-bold px-4 py-1.5 rounded-t-lg text-xs hover:bg-red-50">Makanan</button>
+        <button data-cat="minuman" class="cat-btn bg-gray-100 text-gray-700 font-bold px-4 py-1.5 rounded-t-lg text-xs hover:bg-red-50">Minuman</button>
+        <button data-cat="paket" class="cat-btn bg-gray-100 text-gray-700 font-bold px-4 py-1.5 rounded-t-lg text-xs hover:bg-red-50">Paket</button>
       </div>
 
-      <!-- Grid Cards Produk -->
+      <!-- Grid Cards Produk (Dinamis dari Firestore) -->
       <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 overflow-y-auto pr-1 pb-10">
-        <!-- Item Dummy (Akan Terhubung ke Firestore) -->
-        <div class="bg-white border-2 border-gray-100 rounded-xl overflow-hidden shadow-sm hover:border-red-500 hover:shadow-md cursor-pointer transition" onclick="addToCart('1', 'Ayam Pedas Lava', 25000, 'makanan')">
-          <img src="https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=300" class="w-full h-24 object-cover">
-          <div class="p-2">
-            <span class="text-[10px] bg-red-100 text-red-600 font-bold px-1.5 py-0.5 rounded">Makanan</span>
-            <h4 class="font-bold text-gray-800 text-xs mt-1 truncate">Ayam Pedas Lava</h4>
-            <p class="text-merah-id font-black text-xs">Rp 25.000</p>
-          </div>
-        </div>
-
-        <div class="bg-white border-2 border-gray-100 rounded-xl overflow-hidden shadow-sm hover:border-red-500 hover:shadow-md cursor-pointer transition" onclick="addToCart('2', 'Es Jeruk Mataram', 8000, 'minuman')">
-          <img src="https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=300" class="w-full h-24 object-cover">
-          <div class="p-2">
-            <span class="text-[10px] bg-blue-100 text-blue-600 font-bold px-1.5 py-0.5 rounded">Minuman</span>
-            <h4 class="font-bold text-gray-800 text-xs mt-1 truncate">Es Jeruk Mataram</h4>
-            <p class="text-merah-id font-black text-xs">Rp 8.000</p>
-          </div>
-        </div>
-
-        <div class="bg-white border-2 border-gray-100 rounded-xl overflow-hidden shadow-sm hover:border-red-500 hover:shadow-md cursor-pointer transition" onclick="addToCart('3', 'Paket Fire Hemat', 30000, 'paket')">
-          <img src="https://images.unsplash.com/photo-1562967914-608f82629710?w=300" class="w-full h-24 object-cover">
-          <div class="p-2">
-            <span class="text-[10px] bg-yellow-100 text-yellow-700 font-bold px-1.5 py-0.5 rounded">Paket</span>
-            <h4 class="font-bold text-gray-800 text-xs mt-1 truncate">Paket Fire Hemat</h4>
-            <p class="text-merah-id font-black text-xs">Rp 30.000</p>
-          </div>
-        </div>
+        <p class="text-xs text-gray-400 col-span-4 text-center py-10">Memuat menu dari database...</p>
       </div>
     </div>
 
     <!-- RIGHT PANEL: DAFTAR PESANAN & KASIR -->
     <div class="w-5/12 md:w-4/12 bg-gray-50 flex flex-col h-full justify-between border-l">
       
-      <!-- Detail Pelanggan & Meja -->
       <div class="p-3 bg-white border-b space-y-2">
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="text-[10px] font-bold
+            <label class="text-[10px] font-bold text-gray-500 uppercase">Pelanggan</label>
+            <select id="customer-select" class="w-full border rounded-md p-1.5 text-xs font-semibold focus:border-red-500">
+              <option value="Pelanggan Umum">-- Pelanggan Umum --</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-gray-500 uppercase">No. Meja</label>
+            <input type="text" id="table-no" placeholder="Contoh: Meja 04" class="w-full border rounded-md p-1.5 text-xs font-semibold focus:border-red-500">
+          </div>
+        </div>
+      </div>
+
+      <div class="p-3 flex-1 overflow-y-auto">
+        <div class="flex justify-between items-center border-b pb-1 mb-2">
+          <h3 class="font-bold text-gray-800 text-xs uppercase tracking-wide">Daftar Pesanan</h3>
+          <button id="clear-cart-btn" class="text-[10px] text-red-600 font-bold hover:underline">Hapus Semua</button>
+        </div>
+        <div id="cart-items" class="space-y-2"></div>
+      </div>
+
+      <div class="bg-white border-t p-3 shadow-lg space-y-2.5">
+        
+        <div class="flex justify-between items-center bg-red-50 p-2.5 rounded-lg border border-red-100">
+          <span class="text-xs font-bold text-gray-700">TOTAL BELANJA</span>
+          <span id="cart-total" class="text-lg font-black text-merah-id">Rp 0</span>
+        </div>
+
+        <div>
+          <label class="text-[10px] font-bold text-gray-500 uppercase block mb-1">Metode Pembayaran</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" id="btn-pay-cash" class="py-1.5 rounded-md border text-xs font-bold border-red-600 bg-red-600 text-white">
+              <i class="fas fa-money-bill-wave mr-1"></i> CASH
+            </button>
+            <button type="button" id="btn-pay-qris" class="py-1.5 rounded-md border text-xs font-bold border-gray-300 bg-gray-100 text-gray-700">
+              <i class="fas fa-qrcode mr-1"></i> QRIS
+            </button>
+          </div>
+        </div>
+
+        <div id="cash-input-group" class="grid grid-cols-2 gap-2">
+          <div>
+            <input type="number" id="pay-amount" placeholder="Nominal Uang" class="w-full border rounded-md p-1.5 text-xs focus:border-red-500">
+          </div>
+          <div class="flex items-center justify-end">
+            <span class="text-[10px] text-gray-500 mr-1">Kembali:</span>
+            <span id="change-amount" class="text-xs font-bold text-gray-800">Rp 0</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-1 pt-1">
+          <button id="print-kasir-btn" class="bg-gray-800 text-white font-bold py-2 rounded-md text-[11px] hover:bg-gray-900 transition flex flex-col items-center justify-center">
+            <i class="fas fa-receipt mb-0.5"></i> Struk Kasir
+          </button>
+          <button id="print-kitchen-btn" class="bg-orange-600 text-white font-bold py-2 rounded-md text-[11px] hover:bg-orange-700 transition flex flex-col items-center justify-center">
+            <i class="fas fa-utensils mb-0.5"></i> Struk Dapur
+          </button>
+          <button id="print-drink-btn" class="bg-blue-600 text-white font-bold py-2 rounded-md text-[11px] hover:bg-blue-700 transition flex flex-col items-center justify-center">
+            <i class="fas fa-glass-martini-alt mb-0.5"></i> Struk Minuman
+          </button>
+        </div>
+
+        <button id="process-order-btn" class="w-full bg-merah-id text-white font-extrabold py-2.5 rounded-lg hover:bg-red-700 transition shadow text-xs uppercase tracking-wider">
+          <i class="fas fa-check-circle mr-1"></i> Simpan Transaksi
+        </button>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SCRIPT LOGIKA UTAMA -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
