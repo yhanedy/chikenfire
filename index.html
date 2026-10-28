@@ -1,319 +1,318 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chicken Fire Mataram - Yhan Aplikasi Kasir </title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <style>
-    .bg-merah-id { background-color: #E70011; }
-    .text-merah-id { color: #E70011; }
-    .border-merah-id { border-color: #E70011; }
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-  </style>
-</head>
-<body class="bg-gray-100 font-sans h-screen flex flex-col overflow-hidden">
+<div class="text-center space-y-3 mb-8 relative">
+    <div class="inline-flex p-1 bg-zinc-800/80 rounded-full border border-zinc-700/60 mb-2">
+      <img src="https://lh3.googleusercontent.com/d/1SlFhu3ctTmnSSjbNX-60E0-3khaYuSqp" alt="Logo" class="w-14 h-14 rounded-full object-cover">
+    </div>
+    <h2 class="text-2xl font-bold tracking-tight text-white">Chicken Fire Mataram</h2>
+    <p class="text-xs text-zinc-400">Karanganyar - Jawa Tengah</p>
+  </div>
 
-  <!-- MODAL LOGIN AWAL -->
-  <div id="login-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden border-t-8 border-red-600">
-      <div class="bg-merah-id text-white p-6 text-center flex flex-col items-center">
-        <img src="https://lh3.googleusercontent.com/d/1SlFhu3ctTmnSSjbNX-60E0-3khaYuSqp" alt="Logo Chicken Fire" class="w-20 h-20 rounded-full object-cover border-2 border-white mb-2 shadow-lg">
-        <h2 class="text-2xl font-extrabold tracking-wide uppercase">Chicken Fire Mataram</h2>
-        <p class="text-xs text-red-100 mt-1">Sistem Yhan Kasir & Admin Restoran</p>
+  <form id="login-form" class="space-y-4">
+    <div>
+      <label class="block text-xs font-medium text-zinc-400 mb-1.5">PERAN HAK AKSES</label>
+      <select id="login-role" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm font-medium text-zinc-200 focus:outline-none focus:border-zinc-500 transition">
+        <option value="kasir">Kasir (Petugas Siswa)</option>
+        <option value="admin">Admin System</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-xs font-medium text-zinc-400 mb-1.5">USERNAME</label>
+      <div class="relative">
+        <input type="text" id="login-user" required placeholder="Masukkan username" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition">
+        <i class="fas fa-user absolute left-3.5 top-3.5 text-zinc-500 text-xs"></i>
       </div>
-      <form id="login-form" class="p-6 space-y-4">
+    </div>
+
+    <div>
+      <label class="block text-xs font-medium text-zinc-400 mb-1.5">PASSWORD</label>
+      <div class="relative">
+        <input type="password" id="login-pass" required placeholder="••••••••" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition">
+        <i class="fas fa-lock absolute left-3.5 top-3.5 text-zinc-500 text-xs"></i>
+      </div>
+    </div>
+
+    <p id="login-error" class="text-xs text-red-400 font-medium hidden flex items-center gap-1.5">
+      <i class="fas fa-exclamation-circle"></i> Username atau password tidak valid.
+    </p>
+
+    <button type="submit" class="w-full bg-white hover:bg-zinc-200 text-zinc-950 font-semibold py-2.5 rounded-xl text-sm transition shadow-lg shadow-white/5 tracking-tight flex items-center justify-center gap-2">
+      <span>Masuk ke Sistem</span>
+      <i class="fas fa-arrow-right text-xs"></i>
+    </button>
+  </form>
+</div>
+
+
+<!-- HEADER MENU NAV: USER, RIWAYAT, KELUAR -->
+<div class="flex items-center space-x-3">
+  <div class="bg-zinc-900 border border-zinc-800 px-3 py-1 rounded-full text-xs font-medium text-zinc-300 flex items-center gap-2">
+    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+    <span id="current-user-display">Kasir</span>
+  </div>
+
+  <!-- TOMBOL RIWAYAT TRANSAKSI -->
+  <a href="riwayat.html" id="history-btn" class="text-xs text-zinc-300 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5">
+    <i class="fas fa-history text-[11px] text-red-500"></i> Riwayat
+  </a>
+
+  <button id="logout-btn" class="text-xs text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5">
+    <i class="fas fa-sign-out-alt text-[10px]"></i> Keluar
+  </button>
+</div>
+
+
+  <!-- Top Title Bar -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-zinc-800 gap-4">
+    <div>
+      <h2 class="text-xl font-bold tracking-tight text-white">Dashboard Administration</h2>
+      <p class="text-xs text-zinc-400 mt-0.5">Kelola Menu Resto, Akun Kasir Siswa, Ganti Password & Laporan Excel.</p>
+    </div>
+  </div>
+
+  <!-- GRID KELOLA MENU & DAFTAR MENU -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    
+    <!-- Form Tambah Menu -->
+    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-4">
+      <h3 class="font-semibold text-sm text-white flex items-center gap-2">
+        <i class="fas fa-plus text-red-500 text-xs"></i> Tambah Menu & Set Diskon
+      </h3>
+
+      <form id="add-product-form" class="space-y-3">
         <div>
-          <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Peran / Role</label>
-          <select id="login-role" class="w-full p-2.5 border rounded-lg text-sm focus:outline-none focus:border-red-600 font-bold">
-            <option value="kasir">Kasir (Petugas Siswa)</option>
-            <option value="admin">Admin System</option>
-          </select>
+          <label class="text-xs font-medium text-zinc-400 block mb-1">Nama Menu</label>
+          <input type="text" id="prod-name" required placeholder="Cth: Ayam Lava Super" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-zinc-500">
         </div>
-        <div>
-          <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Username</label>
-          <div class="relative">
-            <input type="text" id="login-user" required placeholder="Masukkan username" class="w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:border-red-600">
-            <i class="fas fa-user absolute left-3 top-3 text-gray-400"></i>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-medium text-zinc-400 block mb-1">Kategori</label>
+            <select id="prod-category" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-xs text-zinc-100 focus:outline-none focus:border-zinc-500">
+              <option value="makanan">Makanan</option>
+              <option value="minuman">Minuman</option>
+              <option value="paket">Paket</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-zinc-400 block mb-1">Harga Normal (Rp)</label>
+            <input type="number" id="prod-price" required placeholder="25000" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-zinc-500">
           </div>
         </div>
-        <div>
-          <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Password</label>
-          <div class="relative">
-            <input type="password" id="login-pass" required placeholder="••••••••" class="w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:border-red-600">
-            <i class="fas fa-lock absolute left-3 top-3 text-gray-400"></i>
+
+        <div class="grid grid-cols-2 gap-3 bg-zinc-950 p-3 rounded-lg border border-zinc-800/80">
+          <div>
+            <label class="text-xs font-medium text-zinc-400 block mb-1">Tipe Diskon</label>
+            <select id="prod-discount-type" class="w-full bg-zinc-900 border border-zinc-800 rounded-md p-2 text-xs text-zinc-200">
+              <option value="none">Tanpa Diskon</option>
+              <option value="percent">Persen (%)</option>
+              <option value="nominal">Nominal Potongan (Rp)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-zinc-400 block mb-1">Nilai Diskon</label>
+            <input type="number" id="prod-discount-value" placeholder="0" value="0" class="w-full bg-zinc-900 border border-zinc-800 rounded-md p-2 text-xs text-zinc-200">
           </div>
         </div>
-        <p id="login-error" class="text-xs text-red-600 font-semibold hidden"><i class="fas fa-exclamation-circle mr-1"></i> Username/Password salah!</p>
-        <button type="submit" class="w-full bg-merah-id text-white font-bold py-3 rounded-lg hover:bg-red-700 transition shadow-md text-sm uppercase tracking-wider">
-          <i class="fas fa-sign-in-alt mr-2"></i> MASUK APLIKASI
+
+        <div>
+          <label class="text-xs font-medium text-zinc-400 block mb-1">Upload Foto Menu</label>
+          <input type="file" id="prod-image-file" accept="image/*" class="w-full text-xs text-zinc-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-zinc-800 file:text-zinc-200 hover:file:bg-zinc-700">
+        </div>
+
+        <button type="submit" id="save-product-btn" class="w-full bg-white hover:bg-zinc-200 text-zinc-950 font-semibold py-2.5 rounded-lg text-xs transition">
+          Simpan & Upload Menu
         </button>
       </form>
     </div>
+
+    <!-- Daftar Gambar Menu + Hapus -->
+    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 flex flex-col h-[420px]">
+      <h3 class="font-semibold text-sm text-white border-b border-zinc-800 pb-2 mb-3 flex items-center justify-between">
+        <span>Daftar Menu Aktif</span>
+        <span class="text-xs text-zinc-500 font-normal">Action Delete</span>
+      </h3>
+      <div id="admin-menu-list" class="overflow-y-auto flex-1 space-y-2 pr-1">
+        <p class="text-xs text-zinc-500 text-center py-10">Memuat menu...</p>
+      </div>
+    </div>
+
   </div>
 
-  <!-- HEADER UTAMA -->
-  <header class="bg-merah-id text-white px-5 py-2 flex items-center justify-between shadow-lg border-b-4 border-white">
-    <div class="flex items-center space-x-3">
-      <img src="https://lh3.googleusercontent.com/d/1SlFhu3ctTmnSSjbNX-60E0-3khaYuSqp" alt="Logo" class="w-10 h-10 rounded-full object-cover border-2 border-white shadow">
-      <div>
-        <h1 class="font-extrabold text-base tracking-wider leading-none">CHICKEN FIRE MATARAM</h1>
-        <span class="text-[11px] text-white/90 font-medium" id="header-subtitle">Aplikasi Yhan Kasir</span>
-      </div>
-    </div>
-
-    <div class="flex items-center space-x-3">
-      <div class="bg-white/20 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center">
-        <i class="fas fa-user-circle mr-1.5"></i>
-        <span id="current-user-display">Kasir</span>
-      </div>
-      <button id="logout-btn" class="bg-red-900 text-white font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-red-950 transition">
-        <i class="fas fa-power-off mr-1"></i> Keluar
-      </button>
-    </div>
-  </header>
-
-  <!-- DASHBOARD ADMIN MURNI (ROLE ADMIN) -->
-  <div id="admin-view" class="flex-1 p-6 bg-gray-100 overflow-y-auto hidden">
-    <div class="max-w-6xl mx-auto space-y-6">
-      
-      <div class="bg-white p-4 rounded-xl shadow border-l-4 border-red-600 flex justify-between items-center">
-        <div>
-          <h2 class="text-lg font-bold text-gray-800"><i class="fas fa-user-shield text-red-600 mr-2"></i> Dashboard Admin System</h2>
-          <p class="text-xs text-gray-500">Kelola Menu, Akun Kasir Siswa, Ganti Password & Export Laporan</p>
-        </div>
-      </div>
-
-      <!-- KELOLA MENU & DAFTAR MENU + HAPUS -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        <!-- Form Tambah Menu & Diskon -->
-        <div class="bg-white p-5 rounded-xl shadow space-y-4">
-          <h3 class="font-bold text-gray-800 text-sm border-b pb-2"><i class="fas fa-plus-circle text-red-600 mr-1"></i> Tambah Menu Makanan & Set Diskon</h3>
-          <form id="add-product-form" class="space-y-3">
-            <div>
-              <label class="text-xs font-bold text-gray-600 block mb-1">Nama Menu</label>
-              <input type="text" id="prod-name" required placeholder="Cth: Ayam Lava Super" class="w-full border rounded-md p-2 text-xs">
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="text-xs font-bold text-gray-600 block mb-1">Kategori</label>
-                <select id="prod-category" class="w-full border rounded-md p-2 text-xs">
-                  <option value="makanan">Makanan</option>
-                  <option value="minuman">Minuman</option>
-                  <option value="paket">Paket</option>
-                </select>
-              </div>
-              <div>
-                <label class="text-xs font-bold text-gray-600 block mb-1">Harga Normal (Rp)</label>
-                <input type="number" id="prod-price" required placeholder="Cth: 25000" class="w-full border rounded-md p-2 text-xs">
-              </div>
-            </div>
-
-            <!-- Fitur Diskon -->
-            <div class="grid grid-cols-2 gap-3 bg-yellow-50 p-2.5 rounded-lg border border-yellow-200">
-              <div>
-                <label class="text-xs font-bold text-yellow-800 block mb-1">Tipe Diskon</label>
-                <select id="prod-discount-type" class="w-full border rounded-md p-1.5 text-xs bg-white">
-                  <option value="none">Tanpa Diskon</option>
-                  <option value="percent">Persen (%)</option>
-                  <option value="nominal">Nominal Potongan (Rp)</option>
-                </select>
-              </div>
-              <div>
-                <label class="text-xs font-bold text-yellow-800 block mb-1">Nilai Diskon</label>
-                <input type="number" id="prod-discount-value" placeholder="0" value="0" class="w-full border rounded-md p-1.5 text-xs bg-white">
-              </div>
-            </div>
-
-            <div>
-              <label class="text-xs font-bold text-gray-600 block mb-1">Upload Foto Menu</label>
-              <input type="file" id="prod-image-file" accept="image/*" required class="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-red-50 file:text-red-700">
-            </div>
-            <button type="submit" id="save-product-btn" class="w-full bg-merah-id text-white font-bold py-2.5 rounded-md text-xs hover:bg-red-700 transition">
-              <i class="fas fa-upload mr-1"></i> Simpan & Upload Menu
-            </button>
-          </form>
-        </div>
-
-        <!-- Daftar Gambar Menu + Fitur Delete Menu -->
-        <div class="bg-white p-5 rounded-xl shadow flex flex-col h-[400px]">
-          <h3 class="font-bold text-gray-800 text-sm border-b pb-2 mb-3"><i class="fas fa-boxes text-red-600 mr-1"></i> Daftar Menu Aktif (Bisa Hapus)</h3>
-          <div id="admin-menu-list" class="overflow-y-auto flex-1 space-y-2 pr-1">
-            <p class="text-xs text-gray-400 text-center py-10">Memuat menu...</p>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- KELOLA KASIR SISWA & GANTI PASSWORD -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        <!-- Tambah Akun Login Kasir / Siswa -->
-        <div class="bg-white p-5 rounded-xl shadow space-y-4">
-          <h3 class="font-bold text-gray-800 text-sm border-b pb-2"><i class="fas fa-user-plus text-blue-600 mr-1"></i> Tambah Login Kasir Siswa</h3>
-          <form id="add-cashier-form" class="space-y-3">
-            <div>
-              <label class="text-xs font-bold text-gray-600 block mb-1">Nama Siswa / Petugas</label>
-              <input type="text" id="cashier-name-input" required placeholder="Cth: Ahmad (Siswa XI)" class="w-full border rounded-md p-2 text-xs">
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="text-xs font-bold text-gray-600 block mb-1">Username Login</label>
-                <input type="text" id="cashier-user-input" required placeholder="username_kasir" class="w-full border rounded-md p-2 text-xs">
-              </div>
-              <div>
-                <label class="text-xs font-bold text-gray-600 block mb-1">Password</label>
-                <input type="password" id="cashier-pass-input" required placeholder="••••••••" class="w-full border rounded-md p-2 text-xs">
-              </div>
-            </div>
-            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 rounded-md text-xs hover:bg-blue-700 transition">
-              <i class="fas fa-save mr-1"></i> Simpan Akun Kasir Siswa
-            </button>
-          </form>
-          <div>
-            <p class="text-[11px] font-bold text-gray-500 mb-2">Daftar Akun Kasir Siswa:</p>
-            <div id="cashier-list-admin" class="space-y-1.5 max-h-36 overflow-y-auto"></div>
-          </div>
-        </div>
-
-        <!-- Form Ganti Password Admin -->
-        <div class="bg-white p-5 rounded-xl shadow space-y-4">
-          <h3 class="font-bold text-gray-800 text-sm border-b pb-2"><i class="fas fa-key text-yellow-600 mr-1"></i> Ganti Password Master Admin</h3>
-          <form id="change-admin-pass-form" class="space-y-3">
-            <div>
-              <label class="text-xs font-bold text-gray-600 block mb-1">Password Admin Baru</label>
-              <input type="password" id="new-admin-pass" required placeholder="Masukkan password baru" class="w-full border rounded-md p-2 text-xs">
-            </div>
-            <button type="submit" class="w-full bg-yellow-600 text-white font-bold py-2 rounded-md text-xs hover:bg-yellow-700 transition">
-              <i class="fas fa-sync mr-1"></i> Update Password Admin
-            </button>
-          </form>
-        </div>
-
-      </div>
-
-      <!-- FILTER & EXPORT LAPORAN EXCEL -->
-      <div class="bg-white p-5 rounded-xl shadow space-y-3">
-        <h3 class="font-bold text-gray-800 text-sm border-b pb-2"><i class="fas fa-file-excel text-green-600 mr-1"></i> Export Laporan Penjualan Excel</h3>
-        <div class="flex flex-wrap items-center gap-3">
-          <div>
-            <label class="text-xs font-bold text-gray-600 block mb-1">Filter Rentang Waktu</label>
-            <select id="export-filter-period" class="border rounded-md p-2 text-xs font-bold text-gray-700 bg-gray-50">
-              <option value="semua">Semua Transaksi</option>
-              <option value="minggu">Pekan Ini (7 Hari Terakhir)</option>
-              <option value="bulan">Bulan Ini</option>
-            </select>
-          </div>
-          <div class="self-end">
-            <button id="export-excel-btn" class="bg-green-600 text-white font-bold px-5 py-2 rounded-md text-xs hover:bg-green-700 transition shadow">
-              <i class="fas fa-download mr-1"></i> Download File Excel (.xlsx)
-            </button>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- PANEL KASIR (ROLE KASIR) -->
-  <div id="kasir-view" class="flex flex-1 overflow-hidden">
+  <!-- GRID KASIR SISWA & GANTI PASSWORD -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     
-    <!-- KATALOG PRODUK -->
-    <div class="w-7/12 md:w-8/12 p-4 flex flex-col h-full bg-white border-r border-gray-200">
-      <div class="flex space-x-2 border-b-2 border-red-600 mb-3 pb-1" id="cat-tabs">
-        <button data-cat="semua" class="cat-btn bg-merah-id text-white font-bold px-4 py-1.5 rounded-t-lg text-xs">Semua</button>
-        <button data-cat="makanan" class="cat-btn bg-gray-100 text-gray-700 font-bold px-4 py-1.5 rounded-t-lg text-xs hover:bg-red-50">Makanan</button>
-        <button data-cat="minuman" class="cat-btn bg-gray-100 text-gray-700 font-bold px-4 py-1.5 rounded-t-lg text-xs hover:bg-red-50">Minuman</button>
-        <button data-cat="paket" class="cat-btn bg-gray-100 text-gray-700 font-bold px-4 py-1.5 rounded-t-lg text-xs hover:bg-red-50">Paket</button>
-      </div>
-
-      <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 overflow-y-auto pr-1 pb-10">
-        <p class="text-xs text-gray-400 col-span-4 text-center py-10">Memuat menu...</p>
+    <!-- Akun Kasir Siswa -->
+    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-4">
+      <h3 class="font-semibold text-sm text-white border-b border-zinc-800 pb-2">Tambah Login Kasir Siswa</h3>
+      <form id="add-cashier-form" class="space-y-3">
+        <div>
+          <label class="text-xs font-medium text-zinc-400 block mb-1">Nama Siswa / Petugas</label>
+          <input type="text" id="cashier-name-input" required placeholder="Cth: Ahmad (Siswa XI)" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-zinc-500">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-medium text-zinc-400 block mb-1">Username Login</label>
+            <input type="text" id="cashier-user-input" required placeholder="username_kasir" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-zinc-500">
+          </div>
+          <div>
+            <label class="text-xs font-medium text-zinc-400 block mb-1">Password</label>
+            <input type="password" id="cashier-pass-input" required placeholder="••••••••" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-zinc-500">
+          </div>
+        </div>
+        <button type="submit" class="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-medium py-2 rounded-lg text-xs transition border border-zinc-700">
+          Simpan Akun Kasir Siswa
+        </button>
+      </form>
+      <div>
+        <p class="text-xs font-medium text-zinc-400 mb-2">Daftar Akun Kasir Siswa:</p>
+        <div id="cashier-list-admin" class="space-y-2 max-h-36 overflow-y-auto"></div>
       </div>
     </div>
 
-    <!-- PANEL TRANSAKSI KASIR -->
-    <div class="w-5/12 md:w-4/12 bg-gray-50 flex flex-col h-full justify-between border-l">
-      
-      <div class="p-3 bg-white border-b space-y-2">
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="text-[10px] font-bold text-gray-500 uppercase">Pelanggan</label>
-            <select id="customer-select" class="w-full border rounded-md p-1.5 text-xs font-semibold focus:border-red-500">
-              <option value="Pelanggan Umum">-- Pelanggan Umum --</option>
-            </select>
-          </div>
-          <div>
-            <label class="text-[10px] font-bold text-gray-500 uppercase">No. Meja</label>
-            <input type="text" id="table-no" placeholder="Contoh: Meja 04" class="w-full border rounded-md p-1.5 text-xs font-semibold focus:border-red-500">
-          </div>
-        </div>
-      </div>
-
-      <div class="p-3 flex-1 overflow-y-auto">
-        <div class="flex justify-between items-center border-b pb-1 mb-2">
-          <h3 class="font-bold text-gray-800 text-xs uppercase tracking-wide">Daftar Pesanan</h3>
-          <button id="clear-cart-btn" class="text-[10px] text-red-600 font-bold hover:underline">Hapus Semua</button>
-        </div>
-        <div id="cart-items" class="space-y-2"></div>
-      </div>
-
-      <div class="bg-white border-t p-3 shadow-lg space-y-2 text-xs">
-        <div class="flex justify-between items-center bg-red-50 p-2.5 rounded-lg border border-red-100">
-          <span class="text-xs font-bold text-gray-700">TOTAL BELANJA</span>
-          <span id="cart-total" class="text-lg font-black text-merah-id">Rp 0</span>
-        </div>
-
+    <!-- Ganti Password Master Admin -->
+    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-4">
+      <h3 class="font-semibold text-sm text-white border-b border-zinc-800 pb-2">Ganti Password Master Admin</h3>
+      <form id="change-admin-pass-form" class="space-y-3">
         <div>
-          <label class="text-[10px] font-bold text-gray-500 uppercase block mb-1">Metode Pembayaran</label>
-          <div class="grid grid-cols-2 gap-2">
-            <button type="button" id="btn-pay-cash" class="py-1.5 rounded-md border text-xs font-bold border-red-600 bg-red-600 text-white">
-              <i class="fas fa-money-bill-wave mr-1"></i> CASH
-            </button>
-            <button type="button" id="btn-pay-qris" class="py-1.5 rounded-md border text-xs font-bold border-gray-300 bg-gray-100 text-gray-700">
-              <i class="fas fa-qrcode mr-1"></i> QRIS
-            </button>
-          </div>
+          <label class="text-xs font-medium text-zinc-400 block mb-1">Password Admin Baru</label>
+          <input type="password" id="new-admin-pass" required placeholder="Masukkan password baru" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-zinc-500">
         </div>
+        <button type="submit" class="w-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 font-medium py-2 rounded-lg text-xs transition">
+          Update Password Admin
+        </button>
+      </form>
+    </div>
 
-        <!-- Opsi Cash -->
-        <div id="cash-input-group" class="grid grid-cols-2 gap-2">
-          <div>
-            <input type="number" id="pay-amount" placeholder="Nominal Uang" class="w-full border rounded-md p-1.5 text-xs focus:border-red-500">
-          </div>
-          <div class="flex items-center justify-end">
-            <span class="text-[10px] text-gray-500 mr-1">Kembali:</span>
-            <span id="change-amount" class="text-xs font-bold text-gray-800">Rp 0</span>
-          </div>
-        </div>
+  </div>
 
-        <!-- Kolom Input RRN 12 Digit (QRIS) -->
-        <div id="qris-input-group" class="hidden">
-          <label class="text-[10px] font-bold text-blue-600 uppercase block mb-0.5">Kode RRN QRIS (12 Digit)</label>
-          <input type="text" id="qris-rrn-input" maxlength="12" placeholder="Contoh: 123456789012" class="w-full border border-blue-400 rounded-md p-1.5 text-xs font-mono tracking-widest text-center focus:border-blue-600 bg-blue-50">
-        </div>
-
-        <div class="grid grid-cols-2 gap-1 pt-1">
-          <button id="print-kitchen-btn" class="bg-orange-600 text-white font-bold py-1.5 rounded-md text-[11px] hover:bg-orange-700 transition flex items-center justify-center">
-            <i class="fas fa-utensils mr-1"></i> Struk Dapur
-          </button>
-          <button id="print-drink-btn" class="bg-blue-600 text-white font-bold py-1.5 rounded-md text-[11px] hover:bg-blue-700 transition flex items-center justify-center">
-            <i class="fas fa-glass-martini-alt mr-1"></i> Struk Minuman
-          </button>
-        </div>
-
-        <button id="process-order-btn" class="w-full bg-merah-id text-white font-extrabold py-2.5 rounded-lg hover:bg-red-700 transition shadow text-xs uppercase tracking-wider">
-          <i class="fas fa-print mr-1"></i> Simpan & Cetak Struk Kasir
+  <!-- EXPORT EXCEL -->
+  <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-3">
+    <h3 class="font-semibold text-sm text-white border-b border-zinc-800 pb-2">Export Laporan Penjualan Excel</h3>
+    <div class="flex flex-wrap items-center gap-4">
+      <div>
+        <label class="text-xs font-medium text-zinc-400 block mb-1">Filter Rentang Waktu</label>
+        <select id="export-filter-period" class="bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-xs text-zinc-200 focus:outline-none">
+          <option value="semua">Semua Transaksi</option>
+          <option value="minggu">Pekan Ini (7 Hari Terakhir)</option>
+          <option value="bulan">Bulan Ini</option>
+        </select>
+      </div>
+      <div class="self-end">
+        <button id="export-excel-btn" class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-semibold px-5 py-2.5 rounded-lg text-xs transition flex items-center gap-2">
+          <i class="fas fa-file-excel"></i> Download Excel (.xlsx)
         </button>
       </div>
-
     </div>
   </div>
 
-  <script type="module" src="app.js"></script>
-</body>
-</html>
+</div>
+
+
+<!-- KATALOG PRODUK KIRI -->
+<div class="w-7/12 md:w-8/12 p-5 flex flex-col h-full bg-zinc-950 border-r border-zinc-800">
+  
+  <!-- Filter Kategori Tabs -->
+  <div class="flex space-x-2 border-b border-zinc-800 mb-4 pb-2" id="cat-tabs">
+    <button data-cat="semua" class="cat-btn bg-white text-zinc-950 font-semibold px-4 py-1.5 rounded-lg text-xs transition">Semua</button>
+    <button data-cat="makanan" class="cat-btn text-zinc-400 hover:text-white hover:bg-zinc-900 font-medium px-4 py-1.5 rounded-lg text-xs transition">Makanan</button>
+    <button data-cat="minuman" class="cat-btn text-zinc-400 hover:text-white hover:bg-zinc-900 font-medium px-4 py-1.5 rounded-lg text-xs transition">Minuman</button>
+    <button data-cat="paket" class="cat-btn text-zinc-400 hover:text-white hover:bg-zinc-900 font-medium px-4 py-1.5 rounded-lg text-xs transition">Paket</button>
+  </div>
+
+  <!-- Product Grid -->
+  <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 overflow-y-auto pr-1 pb-10">
+    <p class="text-xs text-zinc-500 col-span-4 text-center py-10">Memuat menu...</p>
+  </div>
+</div>
+
+<!-- PANEL PESANAN KANAN -->
+<div class="w-5/12 md:w-4/12 bg-zinc-900 flex flex-col h-full justify-between border-l border-zinc-800">
+  
+  <!-- Input Customer & Meja -->
+  <div class="p-4 border-b border-zinc-800 space-y-3 bg-zinc-900">
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider block mb-1">Customer</label>
+        <input type="text" id="customer-select" placeholder="Nama Customer" value="Pelanggan Umum" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-xs font-medium text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-zinc-500">
+      </div>
+      <div>
+        <label class="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider block mb-1">No. Meja</label>
+        <input type="text" id="table-no" placeholder="Cth: 04" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-xs font-medium text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-zinc-500">
+      </div>
+    </div>
+  </div>
+
+  <!-- Item Keranjang -->
+  <div class="p-4 flex-1 overflow-y-auto">
+    <div class="flex justify-between items-center border-b border-zinc-800 pb-2 mb-3">
+      <h3 class="font-semibold text-xs text-zinc-300 uppercase tracking-wider">Ringkasan Pesanan</h3>
+      <button id="clear-cart-btn" class="text-[11px] text-zinc-500 hover:text-red-400 transition">Hapus Semua</button>
+    </div>
+    <div id="cart-items" class="space-y-2"></div>
+  </div>
+
+  <!-- Checkout & Payment Panel -->
+  <div class="bg-zinc-950 border-t border-zinc-800 p-4 space-y-3">
+    <div class="flex justify-between items-center bg-zinc-900 p-3 rounded-xl border border-zinc-800">
+      <span class="text-xs font-medium text-zinc-400">TOTAL BELANJA</span>
+      <span id="cart-total" class="text-lg font-extrabold text-white tracking-tight">Rp 0</span>
+    </div>
+
+    <div>
+      <label class="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider block mb-1.5">Metode Pembayaran</label>
+      <div class="grid grid-cols-2 gap-2">
+        <button type="button" id="btn-pay-cash" class="py-2 rounded-lg border text-xs font-semibold border-white bg-white text-zinc-950 transition">
+          CASH
+        </button>
+        <button type="button" id="btn-pay-qris" class="py-2 rounded-lg border text-xs font-semibold border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white transition">
+          QRIS
+        </button>
+      </div>
+    </div>
+
+    <!-- Cash Inputs & Quick Cash Buttons (50K & 100K) -->
+    <div id="cash-input-group" class="space-y-2">
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <input type="number" id="pay-amount" placeholder="Bayar (Rp)" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none">
+        </div>
+        <div class="flex items-center justify-end">
+          <span class="text-[10px] text-zinc-400 mr-1">Kembali:</span>
+          <span id="change-amount" class="text-xs font-bold text-emerald-400">Rp 0</span>
+        </div>
+      </div>
+      <!-- Quick Amount Buttons -->
+      <div class="flex items-center gap-2">
+        <span class="text-[10px] font-medium text-zinc-500 uppercase">Uang Pas / Cepat:</span>
+        <button type="button" onclick="document.getElementById('pay-amount').value = 50000; document.getElementById('pay-amount').dispatchEvent(new Event('input'))" class="px-3 py-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 rounded-md text-xs font-semibold transition">
+          50K
+        </button>
+        <button type="button" onclick="document.getElementById('pay-amount').value = 100000; document.getElementById('pay-amount').dispatchEvent(new Event('input'))" class="px-3 py-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 rounded-md text-xs font-semibold transition">
+          100K
+        </button>
+      </div>
+    </div>
+
+    <!-- QRIS Input -->
+    <div id="qris-input-group" class="hidden">
+      <label class="text-[10px] font-semibold text-blue-400 uppercase block mb-1">RRN QRIS (12 Digit)</label>
+      <input type="text" id="qris-rrn-input" maxlength="12" placeholder="123456789012" class="w-full bg-blue-950/40 border border-blue-500/40 rounded-lg p-2 text-xs font-mono text-center tracking-widest text-blue-200 focus:outline-none">
+    </div>
+
+    <!-- Receipt Print Buttons -->
+    <div class="grid grid-cols-2 gap-2 pt-1">
+      <button id="print-kitchen-btn" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-medium py-2 rounded-lg text-xs transition flex items-center justify-center gap-1.5">
+        <i class="fas fa-utensils text-[10px]"></i> Struk Dapur
+      </button>
+      <button id="print-drink-btn" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-medium py-2 rounded-lg text-xs transition flex items-center justify-center gap-1.5">
+        <i class="fas fa-glass-martini-alt text-[10px]"></i> Struk Bar
+      </button>
+    </div>
+
+    <!-- Main Process Order Button -->
+    <button id="process-order-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl transition shadow-lg shadow-red-600/20 text-xs uppercase tracking-wider flex items-center justify-center gap-2">
+      <i class="fas fa-print"></i> Simpan & Cetak Struk Kasir
+    </button>
+  </div>
+
+</div>
