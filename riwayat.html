@@ -8,8 +8,6 @@
   <!-- Tailwind CSS & FontAwesome CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
   <!-- Google Fonts Inter -->
@@ -41,7 +39,6 @@
     ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
     
-    /* Styling khusus ikon kalender HTML5 agar berwarna terang pada Dark Mode */
     input[type="date"]::-webkit-calendar-picker-indicator,
     input[type="month"]::-webkit-calendar-picker-indicator {
       filter: invert(1);
@@ -86,7 +83,7 @@
           </div>
         </div>
         <p class="text-[11px] text-zinc-500 mt-3 font-medium flex items-center">
-          <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-2"></span> Transaksi Real-time
+          <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-2"></span> Transaksi Berhasil
         </p>
       </div>
 
@@ -140,10 +137,10 @@
 
     </div>
 
-    <!-- FILTER SECTION: CARI TANGGAL & HARI / BULAN SEBELUMNYA -->
+    <!-- FILTER SECTION -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       
-      <!-- 1. Box Filter Tanggal Spesifik -->
+      <!-- 1. Filter Tanggal -->
       <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-3">
         <div class="flex items-center space-x-2 border-b border-zinc-800 pb-2.5">
           <i class="fas fa-calendar-day text-red-500"></i>
@@ -160,7 +157,7 @@
         </div>
       </div>
 
-      <!-- 2. Box Filter Bulan & Tahun -->
+      <!-- 2. Filter Bulan & Tahun -->
       <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-3">
         <div class="flex items-center space-x-2 border-b border-zinc-800 pb-2.5">
           <i class="fas fa-calendar-alt text-amber-500"></i>
@@ -201,7 +198,7 @@
       </div>
     </div>
 
-    <!-- DAFTAR TRANSAKSI TERBARU (DENGAN BOX KALENDER FILTER) -->
+    <!-- DAFTAR TRANSAKSI TERBARU (DENGAN FITUR VOID/BATAL) -->
     <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
       
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-4">
@@ -212,7 +209,6 @@
           <p class="text-[11px] text-zinc-500 mt-0.5">Filter riwayat tabel berdasarkan pilihan kalender tanggal</p>
         </div>
 
-        <!-- Box Kalender untuk Filter Tabel Transaksi -->
         <div class="flex items-center space-x-2">
           <input type="date" id="table-filter-date" class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-red-600">
           <button id="btn-reset-table-filter" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold px-3 py-1.5 rounded-lg text-xs transition">
@@ -227,11 +223,11 @@
             <tr>
               <th class="p-3">Waktu</th>
               <th class="p-3">Kasir</th>
-              <th class="p-3">Customer</th>
+              <th class="p-3">Customer & Request</th>
               <th class="p-3">Meja</th>
               <th class="p-3">Metode</th>
-              <th class="p-3">RRN QRIS</th>
-              <th class="p-3 text-right">Total Belanja</th>
+              <th class="p-3 text-right">Total</th>
+              <th class="p-3 text-center">Status / Aksi</th>
             </tr>
           </thead>
           <tbody id="transaction-rows" class="divide-y divide-zinc-800/60">
@@ -246,7 +242,7 @@
 
   </main>
 
-  <!-- FOOTER MOTIVASI HARIAN DINAMIS -->
+  <!-- FOOTER MOTIVASI HARIAN -->
   <footer class="bg-zinc-900 border-t border-zinc-800 py-4 px-6 mt-6">
     <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-2 text-center md:text-left">
       <div class="flex items-center space-x-2">
@@ -260,10 +256,10 @@
     </div>
   </footer>
 
-  <!-- SCRIPT KONEKSI FIREBASE & LOGIKA SKRIP -->
+  <!-- SCRIPT KONEKSI FIREBASE & LOGIKA SKRIP VOID -->
   <script type="module">
     import { db } from "./firebase-config.js";
-    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     let allOrders = [];
     let salesChartInstance = null;
@@ -296,18 +292,12 @@
           allOrders.push({ id: docSnap.id, ...docSnap.data() });
         });
 
-        // Urutkan transaksi terbaru di atas
-        allOrders.sort((a, b) => {
-          const tA = a.createdAt?.seconds || 0;
-          const tB = b.createdAt?.seconds || 0;
-          return tB - tA;
-        });
+        allOrders.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
         calculateStats();
         renderTable(allOrders);
         initChart('day');
         
-        // Default tanggal hari ini pada input
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('filter-date').value = today;
       } catch (err) {
@@ -324,6 +314,8 @@
       let monthRev = 0;
 
       allOrders.forEach(o => {
+        if (o.status === 'CANCELLED') return; // Abaikan transaksi batal dari total omset
+
         const d = o.createdAt ? new Date(o.createdAt.seconds * 1000) : new Date();
         const amt = o.totalAmount || 0;
 
@@ -359,26 +351,57 @@
         const dateObj = o.createdAt ? new Date(o.createdAt.seconds * 1000) : new Date();
         const timeStr = dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
         const dateStr = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const isCancelled = o.status === 'CANCELLED';
 
         container.innerHTML += `
-          <tr class="hover:bg-zinc-800/40 transition">
+          <tr class="hover:bg-zinc-800/40 transition ${isCancelled ? 'opacity-50 bg-red-950/10' : ''}">
             <td class="p-3 font-mono text-[11px] text-zinc-400">${dateStr} ${timeStr}</td>
             <td class="p-3 font-bold text-zinc-200">${o.cashierName || 'Kasir'}</td>
-            <td class="p-3 text-zinc-300">${o.customerName || 'Pelanggan Umum'}</td>
+            <td class="p-3 text-zinc-300">
+              <span class="font-semibold block">${o.customerName || 'Pelanggan Umum'}</span>
+              ${o.orderNotes && o.orderNotes !== '-' ? `<span class="text-[10px] text-amber-400 block"><i class="fas fa-pen-nib mr-1"></i>${o.orderNotes}</span>` : ''}
+              ${isCancelled ? `<span class="text-[10px] text-red-400 block font-bold">Alasan Batal: ${o.cancelReason || 'Customer Batal'}</span>` : ''}
+            </td>
             <td class="p-3 text-zinc-400">${o.tableNumber || '-'}</td>
             <td class="p-3">
               <span class="px-2 py-0.5 rounded text-[10px] font-bold ${o.paymentMethod === 'QRIS' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}">
                 ${o.paymentMethod || 'CASH'}
               </span>
             </td>
-            <td class="p-3 font-mono text-zinc-400">${o.qrisRRN || '-'}</td>
-            <td class="p-3 text-right font-black text-red-500">Rp ${(o.totalAmount || 0).toLocaleString('id-ID')}</td>
+            <td class="p-3 text-right font-black ${isCancelled ? 'line-through text-zinc-500' : 'text-red-500'}">Rp ${(o.totalAmount || 0).toLocaleString('id-ID')}</td>
+            <td class="p-3 text-center">
+              ${isCancelled ? `
+                <span class="px-2 py-1 rounded text-[10px] font-extrabold bg-red-950 text-red-400 border border-red-800">BATAL</span>
+              ` : `
+                <button onclick="cancelOrder('${o.id}')" class="bg-zinc-800 hover:bg-red-900 text-zinc-300 hover:text-white border border-zinc-700 hover:border-red-600 px-2 py-1 rounded text-[10px] font-bold transition">
+                  <i class="fas fa-ban mr-1"></i> Batal
+                </button>
+              `}
+            </td>
           </tr>
         `;
       });
     }
 
-    // 1. FUNGSI CARI TANGGAL TRANSAKSI
+    window.cancelOrder = async (orderId) => {
+      const reason = prompt("Masukkan alasan pembatalan pesanan ini:", "Customer Batal Pesan");
+      if (reason === null) return;
+
+      try {
+        await updateDoc(doc(db, "orders", orderId), {
+          status: "CANCELLED",
+          cancelReason: reason || "Dibatalkan Kasir",
+          cancelledAt: new Date()
+        });
+        alert("Transaksi berhasil dibatalkan! Total omset harian telah diperbarui.");
+        fetchOrders();
+      } catch (err) {
+        console.error("Gagal membatalkan transaksi:", err);
+        alert("Gagal membatalkan transaksi.");
+      }
+    };
+
+    // 1. CARI TANGGAL TRANSAKSI
     document.getElementById('btn-filter-date').addEventListener('click', () => {
       const val = document.getElementById('filter-date').value;
       if (!val) return alert('Silakan pilih tanggal terlebih dahulu!');
@@ -388,6 +411,7 @@
       let count = 0;
 
       allOrders.forEach(o => {
+        if (o.status === 'CANCELLED') return;
         const d = o.createdAt ? new Date(o.createdAt.seconds * 1000) : new Date();
         if (d.toDateString() === targetDate) {
           sum += (o.totalAmount || 0);
@@ -400,14 +424,14 @@
         <div class="bg-zinc-950 p-2.5 rounded-xl border border-zinc-800 mt-2">
           <span class="text-zinc-200 font-bold block mb-0.5">Hasil Tanggal: ${formattedVal}</span>
           Total Omset: <span class="text-red-500 font-extrabold">Rp ${sum.toLocaleString('id-ID')}</span> 
-          <span class="text-zinc-500 ml-1">(${count} Transaksi Masuk)</span>
+          <span class="text-zinc-500 ml-1">(${count} Transaksi Berhasil)</span>
         </div>
       `;
     });
 
-    // 2. FUNGSI CARI OMSET BULAN & TAHUN
+    // 2. CARI OMSET BULAN & TAHUN
     document.getElementById('btn-filter-month').addEventListener('click', () => {
-      const val = document.getElementById('filter-month').value; // YYYY-MM
+      const val = document.getElementById('filter-month').value;
       if (!val) return alert('Silakan pilih bulan & tahun terlebih dahulu!');
 
       const [year, month] = val.split('-');
@@ -416,6 +440,7 @@
       let count = 0;
 
       allOrders.forEach(o => {
+        if (o.status === 'CANCELLED') return;
         const d = o.createdAt ? new Date(o.createdAt.seconds * 1000) : new Date();
         if (d.getFullYear() === parseInt(year) && d.getMonth() === monthIndex) {
           sum += (o.totalAmount || 0);
@@ -427,12 +452,12 @@
         <div class="bg-zinc-950 p-2.5 rounded-xl border border-zinc-800 mt-2">
           <span class="text-zinc-200 font-bold block mb-0.5">Hasil Periode: ${monthNames[monthIndex]} ${year}</span>
           Total Omset: <span class="text-amber-400 font-extrabold">Rp ${sum.toLocaleString('id-ID')}</span> 
-          <span class="text-zinc-500 ml-1">(${count} Transaksi Terproses)</span>
+          <span class="text-zinc-500 ml-1">(${count} Transaksi Berhasil)</span>
         </div>
       `;
     });
 
-    // 3. FUNGSI FILTER KALENDER TABEL TRANSAKSI TERBARU
+    // 3. FILTER TABEL
     document.getElementById('table-filter-date').addEventListener('change', (e) => {
       const selectedDate = e.target.value;
       if (!selectedDate) {
@@ -470,6 +495,7 @@
 
           let daySum = 0;
           allOrders.forEach(o => {
+            if (o.status === 'CANCELLED') return;
             const txD = o.createdAt ? new Date(o.createdAt.seconds * 1000) : new Date();
             if (txD.toDateString() === d.toDateString()) {
               daySum += (o.totalAmount || 0);
@@ -483,6 +509,7 @@
         const now = new Date();
 
         allOrders.forEach(o => {
+          if (o.status === 'CANCELLED') return;
           const txD = o.createdAt ? new Date(o.createdAt.seconds * 1000) : new Date();
           if (txD.getMonth() === now.getMonth() && txD.getFullYear() === now.getFullYear()) {
             const dateNum = txD.getDate();
@@ -499,6 +526,7 @@
         const currentYear = new Date().getFullYear();
 
         allOrders.forEach(o => {
+          if (o.status === 'CANCELLED') return;
           const txD = o.createdAt ? new Date(o.createdAt.seconds * 1000) : new Date();
           if (txD.getFullYear() === currentYear) {
             dataValues[txD.getMonth()] += (o.totalAmount || 0);
@@ -547,7 +575,6 @@
       });
     }
 
-    // EVENT TOGGLE TIPE GRAFIK
     document.getElementById('chart-btn-day').addEventListener('click', (e) => setChartMode(e.target, 'day'));
     document.getElementById('chart-btn-week').addEventListener('click', (e) => setChartMode(e.target, 'week'));
     document.getElementById('chart-btn-month').addEventListener('click', (e) => setChartMode(e.target, 'month'));
