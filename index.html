@@ -240,8 +240,8 @@
     <!-- PANEL TRANSAKSI KASIR (KANAN) -->
     <div class="w-5/12 md:w-4/12 bg-zinc-900 flex flex-col h-full justify-between border-l border-zinc-800">
       
-      <!-- Customer, Meja & Input Catatan Khusus Pesanan -->
-      <div class="p-3 bg-zinc-900 border-b border-zinc-800 space-y-2">
+      <!-- Customer & Meja Info -->
+      <div class="p-3 bg-zinc-900 border-b border-zinc-800">
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block mb-0.5">Customer</label>
@@ -252,17 +252,9 @@
             <input type="text" id="table-no" placeholder="Contoh: Meja 04" class="w-full bg-zinc-950 border border-zinc-800 rounded-md p-1.5 text-xs font-medium text-zinc-100 focus:outline-none focus:border-red-600">
           </div>
         </div>
-
-        <!-- FITUR INPUT CATATAN KHUSUS / REQUEST -->
-        <div>
-          <label class="text-[9px] font-bold text-amber-500 uppercase tracking-wider block mb-0.5">
-            <i class="fas fa-pen-nib mr-1"></i> Catatan Khusus / Request
-          </label>
-          <input type="text" id="order-notes" placeholder="Cth: Es teh tanpa gula, Pedas banget..." class="w-full bg-zinc-950 border border-amber-500/30 rounded-md p-1.5 text-xs font-medium text-amber-200 placeholder-zinc-600 focus:outline-none focus:border-amber-500">
-        </div>
       </div>
 
-      <!-- Keranjang Belanja -->
+      <!-- Keranjang Belanja dengan Catatan Per Item -->
       <div class="p-3 flex-1 overflow-y-auto">
         <div class="flex justify-between items-center border-b border-zinc-800 pb-1.5 mb-2">
           <h3 class="font-bold text-zinc-300 text-[11px] uppercase tracking-wider">Daftar Pesanan</h3>
@@ -287,6 +279,7 @@
           </button>
         </div>
 
+        <!-- Opsi Cash saja (RRN QRIS Dihilangkan) -->
         <div id="cash-input-group" class="space-y-1.5">
           <div class="grid grid-cols-2 gap-1.5">
             <input type="number" id="pay-amount" placeholder="Nominal Uang" class="w-full bg-zinc-900 border border-zinc-800 rounded-md p-1.5 text-xs text-zinc-200 focus:outline-none focus:border-red-600">
@@ -303,10 +296,6 @@
               100K
             </button>
           </div>
-        </div>
-
-        <div id="qris-input-group" class="hidden">
-          <input type="text" id="qris-rrn-input" maxlength="12" placeholder="Masukkan 12 Digit RRN QRIS" class="w-full bg-zinc-900 border border-blue-500/50 rounded-md p-1.5 text-xs font-mono tracking-widest text-center text-blue-300 focus:outline-none focus:border-blue-500">
         </div>
 
         <div class="grid grid-cols-2 gap-1.5">
