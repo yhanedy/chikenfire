@@ -124,7 +124,6 @@
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Form Tambah Menu -->
         <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 space-y-3">
           <h3 class="font-bold text-white text-xs uppercase tracking-wider border-b border-zinc-800 pb-2 flex items-center"><i class="fas fa-plus-circle text-red-500 mr-2"></i> Tambah Menu & Set Diskon</h3>
           <form id="add-product-form" class="space-y-3">
@@ -170,7 +169,6 @@
           </form>
         </div>
 
-        <!-- Daftar Gambar Menu -->
         <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex flex-col h-[380px]">
           <h3 class="font-bold text-white text-xs uppercase tracking-wider border-b border-zinc-800 pb-2 mb-2 flex items-center"><i class="fas fa-boxes text-red-500 mr-2"></i> Daftar Menu Aktif</h3>
           <div id="admin-menu-list" class="overflow-y-auto flex-1 space-y-2 pr-1">
@@ -179,7 +177,6 @@
         </div>
       </div>
 
-      <!-- KELOLA KASIR & GANTI PASSWORD -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 space-y-3">
           <h3 class="font-bold text-white text-xs uppercase tracking-wider border-b border-zinc-800 pb-2 flex items-center"><i class="fas fa-user-plus text-blue-500 mr-2"></i> Tambah Login Kasir Siswa</h3>
@@ -207,7 +204,6 @@
         </div>
       </div>
 
-      <!-- EXPORT LAPORAN EXCEL -->
       <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 space-y-2.5">
         <h3 class="font-bold text-white text-xs uppercase tracking-wider border-b border-zinc-800 pb-2 flex items-center"><i class="fas fa-file-excel text-emerald-500 mr-2"></i> Export Laporan Penjualan Excel</h3>
         <div class="flex items-center space-x-3">
@@ -241,7 +237,7 @@
       </div>
     </div>
 
-    <!-- PANEL TRANSAKSI KASIR (KANAN - DIOPTIMALKAN AGAR LEGA) -->
+    <!-- PANEL TRANSAKSI KASIR (KANAN - PROGRESIF & RINGKAS) -->
     <div class="w-5/12 md:w-4/12 bg-zinc-900 flex flex-col h-full justify-between border-l border-zinc-800">
       
       <!-- Customer & Meja Info -->
@@ -268,7 +264,7 @@
       </div>
 
       <!-- Detail Ringkas Total & Metode Pembayaran -->
-      <div class="bg-zinc-950 border-t border-zinc-800 p-3 space-y-2.5 text-xs flex-shrink-0">
+      <div class="bg-zinc-950 border-t border-zinc-800 p-3 space-y-2 text-xs flex-shrink-0">
         <!-- Total Belanja Banner -->
         <div class="flex justify-between items-center bg-zinc-900 p-2.5 rounded-lg border border-zinc-800">
           <span class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">TOTAL BELANJA</span>
@@ -309,7 +305,7 @@
           <input type="text" id="qris-rrn-input" maxlength="12" placeholder="Masukkan 12 Digit RRN QRIS" class="w-full bg-zinc-900 border border-blue-500/50 rounded-md p-1.5 text-xs font-mono tracking-widest text-center text-blue-300 focus:outline-none focus:border-blue-500">
         </div>
 
-        <!-- Tombol Cetak Dapur & Bar (Ringkas Sampingan) -->
+        <!-- Tombol Cetak Dapur & Bar -->
         <div class="grid grid-cols-2 gap-1.5">
           <button id="print-kitchen-btn" class="bg-zinc-900 hover:bg-amber-900/40 text-amber-500 border border-amber-600/40 font-bold py-1.5 rounded-md text-[11px] transition flex items-center justify-center">
             <i class="fas fa-utensils mr-1"></i> Struk Dapur
