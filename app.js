@@ -56,7 +56,7 @@ document.getElementById('logout-btn').addEventListener('click', () => {
   renderCart();
 });
 
-// 2. KELOLA AKUN KASIR SISWA
+// 2. KELOLA KASIR SISWA
 document.getElementById('add-cashier-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const name = document.getElementById('cashier-name-input').value.trim();
@@ -301,7 +301,7 @@ document.querySelectorAll('#cat-tabs button').forEach(btn => {
   });
 });
 
-// 6. KERANJANG KASIR
+// 6. KERANJANG KASIR (CATATAN PER ITEM & SEBELAH QUANTITY)
 function addToCart(prod) {
   let finalPrice = prod.price;
   let discAmount = 0;
@@ -318,7 +318,7 @@ function addToCart(prod) {
   if(existing) {
     existing.qty += 1;
   } else {
-    cart.push({ ...prod, finalPrice, discAmount, qty: 1 });
+    cart.push({ ...prod, finalPrice, discAmount, qty: 1, itemNote: "" });
   }
   renderCart();
 }
@@ -341,23 +341,32 @@ function renderCart() {
     total += subtotal;
 
     container.innerHTML += `
-      <div class="bg-zinc-950 border border-zinc-800 p-2.5 rounded-xl flex items-center justify-between text-xs">
-        <div class="w-1/2">
-          <div class="font-bold text-zinc-100 truncate">${item.name}</div>
-          <div class="text-zinc-400 text-[10px]">
-            Rp ${item.finalPrice.toLocaleString('id-ID')}
-            ${item.discAmount > 0 ? `<span class="text-red-400 font-bold ml-1">(Disc Rp ${item.discAmount.toLocaleString('id-ID')})</span>` : ''}
+      <div class="bg-zinc-950 border border-zinc-800 p-2.5 rounded-xl space-y-2 text-xs">
+        <div class="flex items-center justify-between">
+          <div class="w-1/2">
+            <div class="font-bold text-zinc-100 truncate">${item.name}</div>
+            <div class="text-zinc-400 text-[10px]">
+              Rp ${item.finalPrice.toLocaleString('id-ID')}
+              ${item.discAmount > 0 ? `<span class="text-red-400 font-bold ml-1">(Disc Rp ${item.discAmount.toLocaleString('id-ID')})</span>` : ''}
+            </div>
+          </div>
+
+          <div class="font-black text-red-500 w-20 text-right">
+            Rp ${subtotal.toLocaleString('id-ID')}
           </div>
         </div>
 
-        <div class="flex items-center space-x-1.5 bg-zinc-900 border border-zinc-800 p-1 rounded-lg">
-          <button class="btn-minus w-5 h-5 bg-zinc-800 hover:bg-zinc-700 text-red-400 font-bold rounded flex items-center justify-center transition" data-index="${index}">-</button>
-          <span class="font-black text-white w-5 text-center text-xs">${item.qty}</span>
-          <button class="btn-plus w-5 h-5 bg-red-600 hover:bg-red-700 text-white font-bold rounded flex items-center justify-center transition" data-index="${index}">+</button>
-        </div>
+        <!-- TAMPILAN QUANTITY & INPUT CATATAN PERSIS SEBELAHNYA -->
+        <div class="flex items-center space-x-2 pt-1 border-t border-zinc-900">
+          <div class="flex items-center space-x-1.5 bg-zinc-900 border border-zinc-800 p-1 rounded-lg flex-shrink-0">
+            <button class="btn-minus w-5 h-5 bg-zinc-800 hover:bg-zinc-700 text-red-400 font-bold rounded flex items-center justify-center transition" data-index="${index}">-</button>
+            <span class="font-black text-white w-5 text-center text-xs">${item.qty}</span>
+            <button class="btn-plus w-5 h-5 bg-red-600 hover:bg-red-700 text-white font-bold rounded flex items-center justify-center transition" data-index="${index}">+</button>
+          </div>
 
-        <div class="font-black text-red-500 w-20 text-right">
-          Rp ${subtotal.toLocaleString('id-ID')}
+          <input type="text" placeholder="Catatan (Cth: Tanpa gula)..." value="${item.itemNote || ''}" 
+            onchange="updateItemNote(${index}, this.value)" 
+            class="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1 text-[11px] text-amber-200 placeholder-zinc-600 focus:outline-none focus:border-amber-500">
         </div>
       </div>
     `;
@@ -368,6 +377,12 @@ function renderCart() {
   document.querySelectorAll('.btn-plus').forEach(b => b.addEventListener('click', (e) => updateQty(e.target.dataset.index, 1)));
   calcChange();
 }
+
+window.updateItemNote = (idx, val) => {
+  if (cart[idx]) {
+    cart[idx].itemNote = val.trim();
+  }
+};
 
 function updateQty(idx, change) {
   cart[idx].qty += change;
@@ -387,19 +402,13 @@ function setPaymentMethod(m) {
   currentPayMethod = m;
   const btnC = document.getElementById('btn-pay-cash');
   const btnQ = document.getElementById('btn-pay-qris');
-  const cashGroup = document.getElementById('cash-input-group');
-  const qrisGroup = document.getElementById('qris-input-group');
 
   if(m === 'CASH') {
     btnC.className = "py-2 rounded-lg border text-xs font-bold border-red-600 bg-red-600 text-white transition";
     btnQ.className = "py-2 rounded-lg border text-xs font-bold border-zinc-800 bg-zinc-900 text-zinc-400 hover:bg-zinc-800 transition";
-    cashGroup.classList.remove('hidden');
-    qrisGroup.classList.add('hidden');
   } else {
     btnQ.className = "py-2 rounded-lg border text-xs font-bold border-blue-600 bg-blue-600 text-white transition";
     btnC.className = "py-2 rounded-lg border text-xs font-bold border-zinc-800 bg-zinc-900 text-zinc-400 hover:bg-zinc-800 transition";
-    qrisGroup.classList.remove('hidden');
-    cashGroup.classList.add('hidden');
   }
 }
 
@@ -412,16 +421,10 @@ function calcChange() {
   document.getElementById('change-amount').innerText = 'Rp ' + (change > 0 ? change.toLocaleString('id-ID') : '0');
 }
 
-// 7. SIMPAN TRANSAKSI & PROSES CETAK STRUK
+// 7. SIMPAN TRANSAKSI & CETAK STRUK (TANPA RNN QRIS)
 document.getElementById('process-order-btn').addEventListener('click', async () => {
   if(cart.length === 0) return alert('Pilih pesanan terlebih dahulu!');
-  
-  const qrisRRN = document.getElementById('qris-rrn-input').value.trim();
-  if(currentPayMethod === 'QRIS' && qrisRRN.length !== 12) {
-    return alert('Kode RRN QRIS wajib diisi tepat 12 digit angka!');
-  }
 
-  const notes = document.getElementById('order-notes').value.trim();
   const total = cart.reduce((sum, item) => sum + (item.finalPrice * item.qty), 0);
   const pay = currentPayMethod === 'QRIS' ? total : (parseFloat(document.getElementById('pay-amount').value) || 0);
   if(currentPayMethod === 'CASH' && pay < total) return alert('Uang pembayaran kurang!');
@@ -431,9 +434,7 @@ document.getElementById('process-order-btn').addEventListener('click', async () 
       cashierName: activeCashierName || "Kasir Siswa",
       customerName: document.getElementById('customer-select').value || "Pelanggan Umum",
       tableNumber: document.getElementById('table-no').value || "-",
-      orderNotes: notes || "-",
       paymentMethod: currentPayMethod,
-      qrisRRN: currentPayMethod === 'QRIS' ? qrisRRN : "-",
       status: "COMPLETED",
       items: cart,
       totalAmount: total,
@@ -445,9 +446,7 @@ document.getElementById('process-order-btn').addEventListener('click', async () 
     printReceipt('kasir', activeCashierName || "Kasir Siswa");
     alert(`Transaksi Berhasil Disimpan!`);
     cart = [];
-    document.getElementById('qris-rrn-input').value = '';
     document.getElementById('pay-amount').value = '';
-    document.getElementById('order-notes').value = '';
     renderCart();
   } catch (err) {
     console.error("Gagal simpan transaksi:", err);
@@ -462,28 +461,18 @@ function printReceipt(type, cashier) {
   if(cart.length === 0) return alert('Keranjang belanja masih kosong!');
   const customer = document.getElementById('customer-select').value || "Pelanggan Umum";
   const table = document.getElementById('table-no').value || '-';
-  const notes = document.getElementById('order-notes').value.trim();
-  const qrisRRN = document.getElementById('qris-rrn-input').value.trim();
 
   let receiptTitle = type === 'kasir' ? "=== STRUK BUKTI PEMBELIAN ===" : type === 'kitchen' ? "=== STRUK DAPUR ===" : "=== STRUK BAR ===";
   let itemsToPrint = cart;
   if(type === 'kitchen') itemsToPrint = cart.filter(i => i.category === 'makanan' || i.category === 'paket');
   if(type === 'drink') itemsToPrint = cart.filter(i => i.category === 'minuman' || i.category === 'paket');
 
-  let printText = `${receiptTitle}\nCHICKEN FIRE MATARAM\nAlamat: Karanganyar - Jawa Tengah\nKasir: ${cashier}\nCustomer: ${customer}\nMeja: ${table}\n`;
-  if(notes) {
-    printText += `Catatan Khusus: ${notes}\n`;
-  }
-  printText += `Metode: ${currentPayMethod}\n`;
-  if(currentPayMethod === 'QRIS' && qrisRRN) {
-    printText += `RRN QRIS: ${qrisRRN}\n`;
-  }
-  printText += `--------------------------------\n`;
+  let printText = `${receiptTitle}\nCHICKEN FIRE MATARAM\nAlamat: Karanganyar - Jawa Tengah\nKasir: ${cashier}\nCustomer: ${customer}\nMeja: ${table}\nMetode: ${currentPayMethod}\n--------------------------------\n`;
 
   itemsToPrint.forEach(i => {
     printText += `${i.name} x${i.qty} = Rp ${(i.finalPrice * i.qty).toLocaleString('id-ID')}\n`;
-    if(i.discAmount > 0) {
-      printText += ` (Potongan Disc: Rp ${(i.discAmount * i.qty).toLocaleString('id-ID')})\n`;
+    if(i.itemNote) {
+      printText += `   *Req: ${i.itemNote}\n`;
     }
   });
   printText += `--------------------------------\nTerima Kasih Atas Kunjungan Anda!\nNikmati Pedasnya Chicken Fire!`;
