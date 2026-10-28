@@ -9,7 +9,7 @@ let currentCategory = "semua";
 let activeCashierName = "";
 let adminMasterPassword = "1234";
 
-// 1. LOGIN UTAMA (ADMIN & KASIR)
+// 1. AUTENTIKASI LOGIN
 document.getElementById('login-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const role = document.getElementById('login-role').value;
@@ -56,7 +56,7 @@ document.getElementById('logout-btn').addEventListener('click', () => {
   renderCart();
 });
 
-// 2. KELOLA KASIR SISWA (ADMIN)
+// 2. KELOLA AKUN KASIR SISWA
 document.getElementById('add-cashier-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const name = document.getElementById('cashier-name-input').value.trim();
@@ -111,18 +111,18 @@ window.removeCashier = async (id) => {
   }
 };
 
-// 3. UPDATE PASSWORD MASTER ADMIN
+// 3. GANTI PASSWORD ADMIN
 document.getElementById('change-admin-pass-form').addEventListener('submit', (e) => {
   e.preventDefault();
   const newPass = document.getElementById('new-admin-pass').value.trim();
   if(newPass) {
     adminMasterPassword = newPass;
-    alert("Password Master Admin diperbarui!");
+    alert("Password Admin berhasil diperbarui!");
     document.getElementById('change-admin-pass-form').reset();
   }
 });
 
-// 4. MANAJEMEN MENU & DISKON (ADMIN)
+// 4. UPLOAD MENU BARU
 document.getElementById('add-product-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = document.getElementById('save-product-btn');
@@ -141,7 +141,7 @@ document.getElementById('add-product-form').addEventListener('submit', async (e)
     let imageUrl = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300";
 
     if (file) {
-      btn.innerText = "Upload Foto...";
+      btn.innerText = "Mengunggah Foto...";
       try {
         const formData = new FormData();
         formData.append("image", file);
@@ -157,7 +157,7 @@ document.getElementById('add-product-form').addEventListener('submit', async (e)
           imageUrl = imgurData.data.link;
         }
       } catch (imgErr) {
-        console.warn("Upload foto external gagal, menggunakan foto default:", imgErr);
+        console.warn("Upload gambar eksternal gagal, memakai gambar bawaan:", imgErr);
       }
     }
 
@@ -173,9 +173,10 @@ document.getElementById('add-product-form').addEventListener('submit', async (e)
       createdAt: serverTimestamp()
     });
 
-    alert("Menu berhasil disimpan!");
+    alert("Menu berhasil ditambahkan!");
     document.getElementById('add-product-form').reset();
     loadAdminProducts();
+
   } catch (err) {
     console.error("Error Simpan Menu:", err);
     alert("Terjadi kesalahan saat menyimpan menu.");
@@ -224,7 +225,7 @@ window.deleteProduct = async (id) => {
   }
 };
 
-// 5. KATALOG PRODUK KASIR
+// 5. KATALOG KASIR
 async function loadProducts() {
   const grid = document.getElementById('product-grid');
   if(!grid) return;
@@ -300,7 +301,7 @@ document.querySelectorAll('#cat-tabs button').forEach(btn => {
   });
 });
 
-// 6. KERANJANG KASIR (PERBAIKAN WARNA TEKS KUANTITAS BERWARNA HIJAU/PUTIH TERANG)
+// 6. KERANJANG KASIR
 function addToCart(prod) {
   let finalPrice = prod.price;
   let discAmount = 0;
@@ -420,6 +421,7 @@ document.getElementById('process-order-btn').addEventListener('click', async () 
     return alert('Kode RRN QRIS wajib diisi tepat 12 digit angka!');
   }
 
+  const notes = document.getElementById('order-notes').value.trim();
   const total = cart.reduce((sum, item) => sum + (item.finalPrice * item.qty), 0);
   const pay = currentPayMethod === 'QRIS' ? total : (parseFloat(document.getElementById('pay-amount').value) || 0);
   if(currentPayMethod === 'CASH' && pay < total) return alert('Uang pembayaran kurang!');
@@ -429,8 +431,10 @@ document.getElementById('process-order-btn').addEventListener('click', async () 
       cashierName: activeCashierName || "Kasir Siswa",
       customerName: document.getElementById('customer-select').value || "Pelanggan Umum",
       tableNumber: document.getElementById('table-no').value || "-",
+      orderNotes: notes || "-",
       paymentMethod: currentPayMethod,
       qrisRRN: currentPayMethod === 'QRIS' ? qrisRRN : "-",
+      status: "COMPLETED",
       items: cart,
       totalAmount: total,
       paidAmount: pay,
@@ -443,6 +447,7 @@ document.getElementById('process-order-btn').addEventListener('click', async () 
     cart = [];
     document.getElementById('qris-rrn-input').value = '';
     document.getElementById('pay-amount').value = '';
+    document.getElementById('order-notes').value = '';
     renderCart();
   } catch (err) {
     console.error("Gagal simpan transaksi:", err);
@@ -457,6 +462,7 @@ function printReceipt(type, cashier) {
   if(cart.length === 0) return alert('Keranjang belanja masih kosong!');
   const customer = document.getElementById('customer-select').value || "Pelanggan Umum";
   const table = document.getElementById('table-no').value || '-';
+  const notes = document.getElementById('order-notes').value.trim();
   const qrisRRN = document.getElementById('qris-rrn-input').value.trim();
 
   let receiptTitle = type === 'kasir' ? "=== STRUK BUKTI PEMBELIAN ===" : type === 'kitchen' ? "=== STRUK DAPUR ===" : "=== STRUK BAR ===";
@@ -464,7 +470,11 @@ function printReceipt(type, cashier) {
   if(type === 'kitchen') itemsToPrint = cart.filter(i => i.category === 'makanan' || i.category === 'paket');
   if(type === 'drink') itemsToPrint = cart.filter(i => i.category === 'minuman' || i.category === 'paket');
 
-  let printText = `${receiptTitle}\nCHICKEN FIRE MATARAM\nAlamat: Karanganyar - Jawa Tengah\nKasir: ${cashier}\nCustomer: ${customer}\nMeja: ${table}\nMetode: ${currentPayMethod}\n`;
+  let printText = `${receiptTitle}\nCHICKEN FIRE MATARAM\nAlamat: Karanganyar - Jawa Tengah\nKasir: ${cashier}\nCustomer: ${customer}\nMeja: ${table}\n`;
+  if(notes) {
+    printText += `Catatan Khusus: ${notes}\n`;
+  }
+  printText += `Metode: ${currentPayMethod}\n`;
   if(currentPayMethod === 'QRIS' && qrisRRN) {
     printText += `RRN QRIS: ${qrisRRN}\n`;
   }
