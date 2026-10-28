@@ -237,11 +237,11 @@
       </div>
     </div>
 
-    <!-- PANEL TRANSAKSI KASIR (KANAN - PROGRESIF & RINGKAS) -->
+    <!-- PANEL TRANSAKSI KASIR (KANAN) -->
     <div class="w-5/12 md:w-4/12 bg-zinc-900 flex flex-col h-full justify-between border-l border-zinc-800">
       
-      <!-- Customer & Meja Info -->
-      <div class="p-3 bg-zinc-900 border-b border-zinc-800">
+      <!-- Customer, Meja & Input Catatan Khusus Pesanan -->
+      <div class="p-3 bg-zinc-900 border-b border-zinc-800 space-y-2">
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block mb-0.5">Customer</label>
@@ -252,9 +252,17 @@
             <input type="text" id="table-no" placeholder="Contoh: Meja 04" class="w-full bg-zinc-950 border border-zinc-800 rounded-md p-1.5 text-xs font-medium text-zinc-100 focus:outline-none focus:border-red-600">
           </div>
         </div>
+
+        <!-- FITUR INPUT CATATAN KHUSUS / REQUEST -->
+        <div>
+          <label class="text-[9px] font-bold text-amber-500 uppercase tracking-wider block mb-0.5">
+            <i class="fas fa-pen-nib mr-1"></i> Catatan Khusus / Request
+          </label>
+          <input type="text" id="order-notes" placeholder="Cth: Es teh tanpa gula, Pedas banget..." class="w-full bg-zinc-950 border border-amber-500/30 rounded-md p-1.5 text-xs font-medium text-amber-200 placeholder-zinc-600 focus:outline-none focus:border-amber-500">
+        </div>
       </div>
 
-      <!-- Keranjang Belanja (Sangat Lega & Menggunakan Dark Card) -->
+      <!-- Keranjang Belanja -->
       <div class="p-3 flex-1 overflow-y-auto">
         <div class="flex justify-between items-center border-b border-zinc-800 pb-1.5 mb-2">
           <h3 class="font-bold text-zinc-300 text-[11px] uppercase tracking-wider">Daftar Pesanan</h3>
@@ -265,13 +273,11 @@
 
       <!-- Detail Ringkas Total & Metode Pembayaran -->
       <div class="bg-zinc-950 border-t border-zinc-800 p-3 space-y-2 text-xs flex-shrink-0">
-        <!-- Total Belanja Banner -->
         <div class="flex justify-between items-center bg-zinc-900 p-2.5 rounded-lg border border-zinc-800">
           <span class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">TOTAL BELANJA</span>
           <span id="cart-total" class="text-base font-black text-red-500">Rp 0</span>
         </div>
 
-        <!-- Metode Pembayaran Tabs -->
         <div class="grid grid-cols-2 gap-1.5">
           <button type="button" id="btn-pay-cash" class="py-1.5 rounded-md border text-xs font-bold border-red-600 bg-red-600 text-white transition">
             <i class="fas fa-money-bill-wave mr-1"></i> CASH
@@ -281,7 +287,6 @@
           </button>
         </div>
 
-        <!-- Group Cash Input (Compact Layout) -->
         <div id="cash-input-group" class="space-y-1.5">
           <div class="grid grid-cols-2 gap-1.5">
             <input type="number" id="pay-amount" placeholder="Nominal Uang" class="w-full bg-zinc-900 border border-zinc-800 rounded-md p-1.5 text-xs text-zinc-200 focus:outline-none focus:border-red-600">
@@ -300,12 +305,10 @@
           </div>
         </div>
 
-        <!-- Group QRIS Input -->
         <div id="qris-input-group" class="hidden">
           <input type="text" id="qris-rrn-input" maxlength="12" placeholder="Masukkan 12 Digit RRN QRIS" class="w-full bg-zinc-900 border border-blue-500/50 rounded-md p-1.5 text-xs font-mono tracking-widest text-center text-blue-300 focus:outline-none focus:border-blue-500">
         </div>
 
-        <!-- Tombol Cetak Dapur & Bar -->
         <div class="grid grid-cols-2 gap-1.5">
           <button id="print-kitchen-btn" class="bg-zinc-900 hover:bg-amber-900/40 text-amber-500 border border-amber-600/40 font-bold py-1.5 rounded-md text-[11px] transition flex items-center justify-center">
             <i class="fas fa-utensils mr-1"></i> Struk Dapur
@@ -315,7 +318,6 @@
           </button>
         </div>
 
-        <!-- Tombol Utama Simpan & Cetak -->
         <button id="process-order-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-extrabold py-2.5 rounded-lg transition shadow-md shadow-red-600/20 text-xs uppercase tracking-wider">
           <i class="fas fa-print mr-1.5"></i> Simpan & Cetak Struk
         </button>
