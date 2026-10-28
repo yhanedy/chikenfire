@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chicken Fire Mataram - Riwayat & Analitik</title>
+  
+  <!-- Tailwind CSS & FontAwesome CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Google Fonts Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              red: '#E70011',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #09090b; }
+    ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+  </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 font-sans min-h-screen flex flex-col antialiased selection:bg-red-500 selection:text-white">
+
+  <!-- HEADER NAVIGATION -->
+  <header class="bg-zinc-900 border-b border-zinc-800 px-6 py-3.5 flex items-center justify-between sticky top-0 z-40 shadow-sm">
+    <div class="flex items-center space-x-3">
+      <img src="https://lh3.googleusercontent.com/d/1SlFhu3ctTmnSSjbNX-60E0-3khaYuSqp" alt="Logo" class="w-9 h-9 rounded-full object-cover border border-red-600 shadow">
+      <div>
+        <h1 class="font-black text-sm tracking-wide text-white leading-none">CHICKEN FIRE MATARAM</h1>
+        <span class="text-[10px] text-zinc-400 font-medium">Riwayat Transaksi & Analitik Sales</span>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-3">
+      <a href="index.html" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold px-4 py-2 rounded-lg text-xs border border-zinc-700 transition flex items-center shadow-sm">
+        <i class="fas fa-arrow-left mr-2 text-red-500"></i> Kembali ke Kasir
+      </a>
+    </div>
+  </header>
+
+  <!-- MAIN DASHBOARD CONTENT -->
+  <main class="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">
+
+    <!-- TOP STATS CARDS (SUMMARY HARI INI & BULANAN) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      
+      <!-- Card 1: Omset Hari Ini -->
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 relative overflow-hidden group hover:border-zinc-700 transition">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Omset Hari Ini</p>
+            <h3 id="stat-today-revenue" class="text-2xl font-black text-white mt-1">Rp 0</h3>
+          </div>
+          <div class="p-2.5 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl">
+            <i class="fas fa-cash-register text-lg"></i>
+          </div>
+        </div>
+        <p class="text-[11px] text-zinc-500 mt-3 font-medium flex items-center">
+          <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-2"></span> Transaksi Real-time
+        </p>
+      </div>
+
+      <!-- Card 2: Jumlah Transaksi Hari Ini -->
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 relative overflow-hidden group hover:border-zinc-700 transition">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Transaksi Hari Ini</p>
+            <h3 id="stat-today-count" class="text-2xl font-black text-white mt-1">0 Trx</h3>
+          </div>
+          <div class="p-2.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl">
+            <i class="fas fa-receipt text-lg"></i>
+          </div>
+        </div>
+        <p class="text-[11px] text-zinc-500 mt-3 font-medium flex items-center">
+          <i class="fas fa-users text-zinc-400 mr-1.5"></i> Total Pelanggan Dilayani
+        </p>
+      </div>
+
+      <!-- Card 3: Rata-rata Nilai Order (AOV) -->
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 relative overflow-hidden group hover:border-zinc-700 transition">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Rata-rata Order</p>
+            <h3 id="stat-today-avg" class="text-2xl font-black text-white mt-1">Rp 0</h3>
+          </div>
+          <div class="p-2.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl">
+            <i class="fas fa-chart-line text-lg"></i>
+          </div>
+        </div>
+        <p class="text-[11px] text-zinc-500 mt-3 font-medium flex items-center">
+          <i class="fas fa-calculator text-zinc-400 mr-1.5"></i> Per Transaksi Masuk
+        </p>
+      </div>
+
+      <!-- Card 4: Omset Bulan Berjalan (Besar) -->
+      <div class="bg-zinc-900 border border-red-900/40 rounded-2xl p-5 relative overflow-hidden group hover:border-red-600/50 transition">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-[11px] font-bold text-red-400 uppercase tracking-wider">Omset Bulan Ini</p>
+            <h3 id="stat-month-revenue" class="text-2xl font-black text-red-500 mt-1">Rp 0</h3>
+          </div>
+          <div class="p-2.5 bg-red-600 text-white rounded-xl shadow-lg shadow-red-600/30">
+            <i class="fas fa-wallet text-lg"></i>
+          </div>
+        </div>
+        <p class="text-[11px] text-zinc-400 mt-3 font-medium flex items-center">
+          <i class="fas fa-calendar-alt text-zinc-400 mr-1.5"></i> Periode Bulan Berjalan
+        </p>
+      </div>
+
+    </div>
+
+    <!-- FILTER SECTION (BOX TANGGAL & BOX BULAN SEBELUMNYA) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      
+      <!-- Filter Tanggal Tertentu -->
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-3">
+        <div class="flex items-center space-x-2 border-b border-zinc-800 pb-2.5">
+          <i class="fas fa-calendar-day text-red-500"></i>
+          <h3 class="font-bold text-xs uppercase tracking-wider text-zinc-200">Cari Riwayat Tanggal Transaksi</h3>
+        </div>
+        <div class="flex gap-2">
+          <input type="date" id="filter-date" class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-xs text-zinc-200 focus:outline-none focus:border-red-600">
+          <button id="btn-filter-date" class="bg-red-600 hover:bg-red-700 text-white font-bold px-4 rounded-xl text-xs transition">
+            Cari
+          </button>
+        </div>
+        <div id="filter-date-result" class="text-xs text-zinc-400 font-medium">
+          Pilih tanggal di atas untuk melihat total omset pada hari tersebut.
+        </div>
+      </div>
+
+      <!-- Filter Bulan Sebelumnya -->
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-3">
+        <div class="flex items-center space-x-2 border-b border-zinc-800 pb-2.5">
+          <i class="fas fa-calendar-alt text-amber-500"></i>
+          <h3 class="font-bold text-xs uppercase tracking-wider text-zinc-200">Cek Omset Bulan Sebelumnya</h3>
+        </div>
+        <div class="flex gap-2">
+          <input type="month" id="filter-month" class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-xs text-zinc-200 focus:outline-none focus:border-red-600">
+          <button id="btn-filter-month" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 rounded-xl text-xs transition">
+            Lihat Omset
+          </button>
+        </div>
+        <div id="filter-month-result" class="text-xs text-zinc-400 font-medium">
+          Pilih bulan & tahun untuk menghitung rekapitulasi omset lampau.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- GRAFIK INTERAKTIF (PER HARI / PER MINGGU / PER BULAN) -->
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-4">
+        <div>
+          <h3 class="font-bold text-sm text-white flex items-center">
+            <i class="fas fa-chart-area text-red-500 mr-2"></i> Grafik Trend Penjualan
+          </h3>
+          <p class="text-xs text-zinc-400 mt-0.5">Visualisasi pergerakan omset restoran Chicken Fire Mataram</p>
+        </div>
+
+        <div class="flex bg-zinc-950 p-1 rounded-xl border border-zinc-800 self-start sm:self-auto">
+          <button id="chart-btn-day" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600 text-white transition">Harian</button>
+          <button id="chart-btn-week" class="px-3 py-1.5 rounded-lg text-xs font-bold text-zinc-400 hover:text-white transition">Mingguan</button>
+          <button id="chart-btn-month" class="px-3 py-1.5 rounded-lg text-xs font-bold text-zinc-400 hover:text-white transition">Bulanan</button>
+        </div>
+      </div>
+
+      <!-- Canvas Chart -->
+      <div class="h-72 w-full relative">
+        <canvas id="salesChart"></canvas>
+      </div>
+    </div>
+
+    <!-- TABEL LOG RIWAYAT TRANSAKSI TERAKHIR -->
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
+      <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
+        <h3 class="font-bold text-xs uppercase tracking-wider text-white flex items-center">
+          <i class="fas fa-list text-zinc-400 mr-2"></i> Daftar Transaksi Terbaru
+        </h3>
+        <span class="text-[10px] text-zinc-500 font-medium">Auto Update Firestore</span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs text-zinc-300">
+          <thead class="bg-zinc-950 text-zinc-400 uppercase text-[10px] tracking-wider border-b border-zinc-800">
+            <tr>
+              <th class="p-3">Waktu</th>
+              <th class="p-3">Kasir</th>
+              <th class="p-3">Customer</th>
+              <th class="p-3">Meja</th>
+              <th class="p-3">Metode</th>
+              <th class="p-3">RRN QRIS</th>
+              <th class="p-3 text-right">Total</th>
+            </tr>
+          </thead>
+          <tbody id="transaction-rows" class="divide-y divide-zinc-800/60">
+            <tr>
+              <td colspan="7" class="text-center py-6 text-zinc-500">Memuat riwayat transaksi...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER MOTIVASI HARIAN DINAMIS (DARI X / TWITTER INSPIRATION) -->
+  <footer class="bg-zinc-900 border-t border-zinc-800 py-4 px-6 mt-6">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-2 text-center md:text-left">
+      <div class="flex items-center space-x-2">
+        <i class="fab fa-x-twitter text-zinc-400 text-sm"></i>
+        <span class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Inspirasi Harian:</span>
+      </div>
+      <p id="daily-quote" class="text-xs text-zinc-300 italic font-medium">
+        "Kesuksesan berawal dari pelayanan yang ramah dan kualitas produk yang konsisten."
+      </p>
+      <span class="text-[10px] text-zinc-500 font-mono">Karanganyar - Jawa Tengah</span>
+    </div>
+  </footer>
+
+  <!-- SCRIPT INTEGRASI FIREBASE & CHART -->
+  <script type="module">
+    import { db } from "./firebase-config.js";
+    import { collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    let allOrders = [];
+    let salesChartInstance = null;
+
+    // KUMPULAN KATA MOTIVASI HARIAN
+    const dailyQuotes = [
+      "Pelayanan yang tulus hari ini adalah investasi keberhasilan restoran esok hari.",
+      "Kualitas rasa dan keramahan kasir adalah kunci pelanggan selalu kembali.",
+      "Setiap porsi yang disajikan dengan hati membawa kehangatan bagi penikmatnya.",
+      "Kerja keras tim hari ini akan membuahkan omset dan kemajuan bersama.",
+      "Kesuksesan usaha kuliner dibangun dari konsistensi dan integritas kerja.",
+      "Senyum kasir saat menyapa customer adalah kesan pertama yang tak ternilai.",
+      "Fokus pada kepuasan pelanggan, maka keberhasilan akan mengikuti."
+    ];
+
+    function setDailyQuote() {
+      const todayIndex = new Date().getDate() % dailyQuotes.length;
+      document.getElementById('daily-quote').innerText = `"${dailyQuotes[todayIndex]}"`;
+    }
+
+    async function fetchOrders() {
+      try {
+        const snap = await getDocs(collection(db, "orders"));
+        allOrders = [];
+        snap.forEach(docSnap => {
+          allOrders.push({ id: docSnap.id, ...docSnap.data() });
+        });
+
+        allOrders.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+        calculateStats();
+        renderTable();
+        initChart('day');
+      } catch (err) {
+        console.error("Gagal memuat riwayat Firestore:", err);
+      }
+    }
+
+    function calculateStats() {
+      const now = new Date();
+      const todayStr = now.toDateString();
+
+      let todayRev = 0;
+      let todayCount = 0;
+      let monthRev = 0;
+
+      allOrders.forEach(o => {
+        const d = o.createdAt ? new Date(o.createdAt.seconds * 1000) : new Date();
+        const amt = o.totalAmount || 0;
+
+        if (d.toDateString() === todayStr) {
+          todayRev += amt;
+          todayCount += 1;
+        }
+
+        if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+          monthRev += amt;
+        }
+      });
+
+      const avgOrder = todayCount > 0 ? todayRev / todayCount : 0;
+
+      document.getElementById('stat-today-revenue').innerText = 'Rp ' + todayRev.toLocaleString('id-ID');
+      document.getElementById('stat-today-count').innerText = todayCount + ' Trx';
+      document.getElementById('stat-today-avg').innerText = 'Rp ' + Math.round(avgOrder).toLocaleString('id-ID');
+      document.getElementById('stat-month-revenue').innerText = 'Rp ' + monthRev.toLocaleString('id-ID');
+    }
+
+    function renderTable() {
+      const container = document.getElementById('transaction-rows');
+      container.innerHTML = '';
+
+      if (allOrders.length === 0) {
+        container.innerHTML = '<tr><td colspan="7" class="text-center py-6 text-zinc-500">Belum ada transaksi recorded.</td></tr>';
+        return;
+      }
+
+      allOrders.slice(0, 15).forEach(o => {
+        const dateObj = o.createdAt ? new Date(o.createdAt.seconds * 1000) : new Date();
+        const timeStr = dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        const dateStr = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' });
+
+        container.innerHTML += `
+          <tr class="hover:bg-zinc-800/40 transition">
+            <td class="p-3 font-mono text-[11px] text-zinc-400">${dateStr} ${timeStr}</td>
+            <td class="p-3 font-bold text-zinc-200">${o.cashierName || 'Kasir'}</td>
+            <td class="p-3 text-zinc-300">${o.customerName || 'Pelanggan Umum'}</td>
+            <td class="p-3 text-zinc-400">${o.tableNumber || '-'}</td>
+            <td class="p-3">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${o.paymentMethod === 'QRIS' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}">
+                ${o.paymentMethod || 'CASH'}
+              </span>
+            </td>
+            <td class="p-3 font-mono text-zinc-400">${o.qrisRRN || '-'}</td>
+            <td class="p-3 text-right font-black text-red-500">Rp ${(o.totalAmount || 0).toLocaleString('id-ID')}</td>
+          </tr>
+        `;
+      });
+    }
+
+    // CARI RIWAYAT TANGGAL
+    document.getElementById('btn-filter-date').addEventListener('click', () => {
+      const val = document.getElementById('filter-date').value;
+      if (!val) return;
+
+      const targetDate = new Date(val).toDateString();
+      let sum = 0;
+      let count = 0;
+
+      allOrders.forEach(o => {
+        const d = o.createdAt ? new Date(o.createdAt.seconds * 1000) : new Date();
+        if (d.toDateString() === targetDate) {
+          sum += (o.totalAmount || 0);
+          count++;
+        }
+      });
+
+      document.getElementById('filter-date-result').innerHTML = `
+        <span class="text-white font-bold">Hasil Tanggal ${val}:</span> Total Omset 
+        <span class="text-red-500 font-bold">Rp ${sum.toLocaleString('id-ID')}</span> (${count} Transaksi).
+      `;
+    });
+
+    // CARI OMSET BULAN TERTENTU
+    document.getElementById('btn-filter-month').addEventListener('click', () => {
+      const val = document.getElementById('filter-month').value; // Format: YYYY-MM
+      if (!val) return;
+
+      const [year, month] = val.split('-');
+      let sum = 0;
+      let count = 0;
+
+      allOrders.forEach(o => {
+        const d = o.createdAt ? new Date(o.createdAt.seconds * 1000) : new Date();
+        if (d.getFullYear() === parseInt(year) && (d.getMonth() + 1) === parseInt(month)) {
+          sum += (o.totalAmount || 0);
+          count++;
+        }
+      });
+
+      document.getElementById('filter-month-result').innerHTML = `
+        <span class="text-white font-bold">Hasil Bulan ${val}:</span> Total Omset 
+        <span class="text-amber-400 font-bold">Rp ${sum.toLocaleString('id-ID')}</span> (${count} Transaksi).
+      `;
+    });
+
+    // INITALIZE CHART.JS
+    function initChart(mode) {
+      const ctx = document.getElementById('salesChart').getContext('2d');
+      if (salesChartInstance) salesChartInstance.destroy();
+
+      let labels = [];
+      let dataValues = [];
+
+      if (mode === 'day') {
+        // 7 Hari Terakhir
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          labels.push(d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' }));
+
+          let daySum = 0;
+          allOrders.forEach(o => {
+            const txD = o.createdAt ? new Date(o.createdAt.seconds * 1000) : new Date();
+            if (txD.toDateString() === d.toDateString()) {
+              daySum += (o.totalAmount || 0);
+            }
+          });
+          dataValues.push(daySum);
+        }
+      } else if (mode === 'week') {
+        labels = ['Pekan 1', 'Pekan 2', 'Pekan 3', 'Pekan 4'];
+        dataValues = [1500000, 2300000, 1800000, 3100000]; // Sample/Agregat Pekan
+      } else if (mode === 'month') {
+        labels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+        dataValues = new Array(12).fill(0);
+        allOrders.forEach(o => {
+          const txD = o.createdAt ? new Date(o.createdAt.seconds * 1000) : new Date();
+          dataValues[txD.getMonth()] += (o.totalAmount || 0);
+        });
+      }
+
+      salesChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Omset Penjualan (Rp)',
+            data: dataValues,
+            borderColor: '#E70011',
+            backgroundColor: 'rgba(231, 0, 17, 0.1)',
+            fill: true,
+            tension: 0.4,
+            borderWidth: 3,
+            pointBackgroundColor: '#E70011',
+            pointRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(255, 255, 255, 0.05)' },
+              ticks: { color: '#a1a1aa', font: { size: 11 } }
+            },
+            y: {
+              grid: { color: 'rgba(255, 255, 255, 0.05)' },
+              ticks: { color: '#a1a1aa', font: { size: 11 } }
+            }
+          }
+        }
+      });
+    }
+
+    // TOGGLE CHART MODE BUTTONS
+    document.getElementById('chart-btn-day').addEventListener('click', (e) => setChartMode(e.target, 'day'));
+    document.getElementById('chart-btn-week').addEventListener('click', (e) => setChartMode(e.target, 'week'));
+    document.getElementById('chart-btn-month').addEventListener('click', (e) => setChartMode(e.target, 'month'));
+
+    function setChartMode(btn, mode) {
+      document.querySelectorAll('#chart-btn-day, #chart-btn-week, #chart-btn-month').forEach(b => {
+        b.className = "px-3 py-1.5 rounded-lg text-xs font-bold text-zinc-400 hover:text-white transition";
+      });
+      btn.className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600 text-white transition";
+      initChart(mode);
+    }
+
+    setDailyQuote();
+    fetchOrders();
+  </script>
+</body>
+</html>
