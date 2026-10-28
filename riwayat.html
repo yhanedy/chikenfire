@@ -40,6 +40,13 @@
     ::-webkit-scrollbar-track { background: #09090b; }
     ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+    
+    /* Styling khusus ikon kalender HTML5 agar berwarna terang pada Dark Mode */
+    input[type="date"]::-webkit-calendar-picker-indicator,
+    input[type="month"]::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+      cursor: pointer;
+    }
   </style>
 </head>
 <body class="bg-zinc-950 text-zinc-100 font-sans min-h-screen flex flex-col antialiased selection:bg-red-500 selection:text-white">
@@ -50,7 +57,7 @@
       <img src="https://lh3.googleusercontent.com/d/1SlFhu3ctTmnSSjbNX-60E0-3khaYuSqp" alt="Logo" class="w-9 h-9 rounded-full object-cover border border-red-600 shadow">
       <div>
         <h1 class="font-black text-sm tracking-wide text-white leading-none">CHICKEN FIRE MATARAM</h1>
-        <span class="text-[10px] text-zinc-400 font-medium">Riwayat Transaksi & Analitik Sales</span>
+        <span class="text-[10px] text-zinc-400 font-medium">Karanganyar - Jawa Tengah • Riwayat Transaksi</span>
       </div>
     </div>
 
@@ -64,7 +71,7 @@
   <!-- MAIN DASHBOARD CONTENT -->
   <main class="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">
 
-    <!-- TOP STATS CARDS (SUMMARY HARI INI & BULANAN) -->
+    <!-- TOP STATS CARDS -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       
       <!-- Card 1: Omset Hari Ini -->
@@ -99,7 +106,7 @@
         </p>
       </div>
 
-      <!-- Card 3: Rata-rata Nilai Order (AOV) -->
+      <!-- Card 3: Rata-rata Nilai Order -->
       <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 relative overflow-hidden group hover:border-zinc-700 transition">
         <div class="flex justify-between items-start">
           <div>
@@ -115,7 +122,7 @@
         </p>
       </div>
 
-      <!-- Card 4: Omset Bulan Berjalan (Besar) -->
+      <!-- Card 4: Omset Bulan Berjalan -->
       <div class="bg-zinc-900 border border-red-900/40 rounded-2xl p-5 relative overflow-hidden group hover:border-red-600/50 transition">
         <div class="flex justify-between items-start">
           <div>
@@ -126,17 +133,17 @@
             <i class="fas fa-wallet text-lg"></i>
           </div>
         </div>
-        <p class="text-[11px] text-zinc-400 mt-3 font-medium flex items-center">
+        <p class="text-[11px] text-zinc-400 mt-3 font-medium flex items-center" id="stat-month-name">
           <i class="fas fa-calendar-alt text-zinc-400 mr-1.5"></i> Periode Bulan Berjalan
         </p>
       </div>
 
     </div>
 
-    <!-- FILTER SECTION (BOX TANGGAL & BOX BULAN SEBELUMNYA) -->
+    <!-- FILTER SECTION: CARI TANGGAL & HARI / BULAN SEBELUMNYA -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       
-      <!-- Filter Tanggal Tertentu -->
+      <!-- 1. Box Filter Tanggal Spesifik -->
       <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-3">
         <div class="flex items-center space-x-2 border-b border-zinc-800 pb-2.5">
           <i class="fas fa-calendar-day text-red-500"></i>
@@ -145,15 +152,15 @@
         <div class="flex gap-2">
           <input type="date" id="filter-date" class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-xs text-zinc-200 focus:outline-none focus:border-red-600">
           <button id="btn-filter-date" class="bg-red-600 hover:bg-red-700 text-white font-bold px-4 rounded-xl text-xs transition">
-            Cari
+            Cari Tanggal
           </button>
         </div>
         <div id="filter-date-result" class="text-xs text-zinc-400 font-medium">
-          Pilih tanggal di atas untuk melihat total omset pada hari tersebut.
+          Klik kolom kalender di atas untuk memilih tanggal yang ingin diperiksa.
         </div>
       </div>
 
-      <!-- Filter Bulan Sebelumnya -->
+      <!-- 2. Box Filter Bulan & Tahun -->
       <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-3">
         <div class="flex items-center space-x-2 border-b border-zinc-800 pb-2.5">
           <i class="fas fa-calendar-alt text-amber-500"></i>
@@ -166,42 +173,52 @@
           </button>
         </div>
         <div id="filter-month-result" class="text-xs text-zinc-400 font-medium">
-          Pilih bulan & tahun untuk menghitung rekapitulasi omset lampau.
+          Pilih bulan & tahun di atas untuk menghitung omset bulan lampau.
         </div>
       </div>
 
     </div>
 
-    <!-- GRAFIK INTERAKTIF (PER HARI / PER MINGGU / PER BULAN) -->
+    <!-- GRAFIK INTERAKTIF -->
     <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-4">
         <div>
           <h3 class="font-bold text-sm text-white flex items-center">
-            <i class="fas fa-chart-area text-red-500 mr-2"></i> Grafik Trend Penjualan
+            <i class="fas fa-chart-area text-red-500 mr-2"></i> Grafik Trend Penjualan Omset
           </h3>
-          <p class="text-xs text-zinc-400 mt-0.5">Visualisasi pergerakan omset restoran Chicken Fire Mataram</p>
+          <p class="text-xs text-zinc-400 mt-0.5">Visualisasi omset restoran Chicken Fire Mataram</p>
         </div>
 
         <div class="flex bg-zinc-950 p-1 rounded-xl border border-zinc-800 self-start sm:self-auto">
-          <button id="chart-btn-day" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600 text-white transition">Harian</button>
-          <button id="chart-btn-week" class="px-3 py-1.5 rounded-lg text-xs font-bold text-zinc-400 hover:text-white transition">Mingguan</button>
-          <button id="chart-btn-month" class="px-3 py-1.5 rounded-lg text-xs font-bold text-zinc-400 hover:text-white transition">Bulanan</button>
+          <button id="chart-btn-day" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600 text-white transition">7 Hari Terakhir</button>
+          <button id="chart-btn-week" class="px-3 py-1.5 rounded-lg text-xs font-bold text-zinc-400 hover:text-white transition">Per Pekan</button>
+          <button id="chart-btn-month" class="px-3 py-1.5 rounded-lg text-xs font-bold text-zinc-400 hover:text-white transition">Per Bulan</button>
         </div>
       </div>
 
-      <!-- Canvas Chart -->
       <div class="h-72 w-full relative">
         <canvas id="salesChart"></canvas>
       </div>
     </div>
 
-    <!-- TABEL LOG RIWAYAT TRANSAKSI TERAKHIR -->
+    <!-- DAFTAR TRANSAKSI TERBARU (DENGAN BOX KALENDER FILTER) -->
     <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
-      <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
-        <h3 class="font-bold text-xs uppercase tracking-wider text-white flex items-center">
-          <i class="fas fa-list text-zinc-400 mr-2"></i> Daftar Transaksi Terbaru
-        </h3>
-        <span class="text-[10px] text-zinc-500 font-medium">Auto Update Firestore</span>
+      
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-4">
+        <div>
+          <h3 class="font-bold text-xs uppercase tracking-wider text-white flex items-center">
+            <i class="fas fa-list text-zinc-400 mr-2"></i> Daftar Transaksi Terbaru
+          </h3>
+          <p class="text-[11px] text-zinc-500 mt-0.5">Filter riwayat tabel berdasarkan pilihan kalender tanggal</p>
+        </div>
+
+        <!-- Box Kalender untuk Filter Tabel Transaksi -->
+        <div class="flex items-center space-x-2">
+          <input type="date" id="table-filter-date" class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-red-600">
+          <button id="btn-reset-table-filter" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold px-3 py-1.5 rounded-lg text-xs transition">
+            Tampilkan Semua
+          </button>
+        </div>
       </div>
 
       <div class="overflow-x-auto">
@@ -214,7 +231,7 @@
               <th class="p-3">Meja</th>
               <th class="p-3">Metode</th>
               <th class="p-3">RRN QRIS</th>
-              <th class="p-3 text-right">Total</th>
+              <th class="p-3 text-right">Total Belanja</th>
             </tr>
           </thead>
           <tbody id="transaction-rows" class="divide-y divide-zinc-800/60">
@@ -224,11 +241,12 @@
           </tbody>
         </table>
       </div>
+
     </div>
 
   </main>
 
-  <!-- FOOTER MOTIVASI HARIAN DINAMIS (DARI X / TWITTER INSPIRATION) -->
+  <!-- FOOTER MOTIVASI HARIAN DINAMIS -->
   <footer class="bg-zinc-900 border-t border-zinc-800 py-4 px-6 mt-6">
     <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-2 text-center md:text-left">
       <div class="flex items-center space-x-2">
@@ -242,23 +260,27 @@
     </div>
   </footer>
 
-  <!-- SCRIPT INTEGRASI FIREBASE & CHART -->
+  <!-- SCRIPT KONEKSI FIREBASE & LOGIKA SKRIP -->
   <script type="module">
     import { db } from "./firebase-config.js";
-    import { collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     let allOrders = [];
     let salesChartInstance = null;
 
-    // KUMPULAN KATA MOTIVASI HARIAN
+    const monthNames = [
+      "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+      "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    ];
+
     const dailyQuotes = [
-      "Pelayanan yang tulus hari ini adalah investasi keberhasilan restoran esok hari.",
-      "Kualitas rasa dan keramahan kasir adalah kunci pelanggan selalu kembali.",
-      "Setiap porsi yang disajikan dengan hati membawa kehangatan bagi penikmatnya.",
-      "Kerja keras tim hari ini akan membuahkan omset dan kemajuan bersama.",
-      "Kesuksesan usaha kuliner dibangun dari konsistensi dan integritas kerja.",
-      "Senyum kasir saat menyapa customer adalah kesan pertama yang tak ternilai.",
-      "Fokus pada kepuasan pelanggan, maka keberhasilan akan mengikuti."
+      "Pelayanan tulus hari ini adalah investasi kebanggaan restoran di masa depan.",
+      "Kualitas rasa dan senyum ramah kasir adalah alasan utama pelanggan selalu kembali.",
+      "Setiap sajian yang dibuat dengan hati menghadirkan kebahagiaan bagi penikmatnya.",
+      "Kerjasama tim yang solid adalah kunci pencapaian target dan omset terbaik.",
+      "Keberhasilan usaha kuliner dibangun dari konsistensi, kebersihan, dan kejujuran.",
+      "Salam dan senyuman kasir adalah kesan indah pertama yang dirasakan customer.",
+      "Fokus pada keunggulan produk dan kepuasan pelanggan, maka sukses akan mengiringi."
     ];
 
     function setDailyQuote() {
@@ -274,13 +296,22 @@
           allOrders.push({ id: docSnap.id, ...docSnap.data() });
         });
 
-        allOrders.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        // Urutkan transaksi terbaru di atas
+        allOrders.sort((a, b) => {
+          const tA = a.createdAt?.seconds || 0;
+          const tB = b.createdAt?.seconds || 0;
+          return tB - tA;
+        });
 
         calculateStats();
-        renderTable();
+        renderTable(allOrders);
         initChart('day');
+        
+        // Default tanggal hari ini pada input
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('filter-date').value = today;
       } catch (err) {
-        console.error("Gagal memuat riwayat Firestore:", err);
+        console.error("Gagal memuat data transaksi Firestore:", err);
       }
     }
 
@@ -312,21 +343,22 @@
       document.getElementById('stat-today-count').innerText = todayCount + ' Trx';
       document.getElementById('stat-today-avg').innerText = 'Rp ' + Math.round(avgOrder).toLocaleString('id-ID');
       document.getElementById('stat-month-revenue').innerText = 'Rp ' + monthRev.toLocaleString('id-ID');
+      document.getElementById('stat-month-name').innerHTML = `<i class="fas fa-calendar-alt text-zinc-400 mr-1.5"></i> Periode: ${monthNames[now.getMonth()]} ${now.getFullYear()}`;
     }
 
-    function renderTable() {
+    function renderTable(dataList) {
       const container = document.getElementById('transaction-rows');
       container.innerHTML = '';
 
-      if (allOrders.length === 0) {
-        container.innerHTML = '<tr><td colspan="7" class="text-center py-6 text-zinc-500">Belum ada transaksi recorded.</td></tr>';
+      if (dataList.length === 0) {
+        container.innerHTML = '<tr><td colspan="7" class="text-center py-6 text-zinc-500">Tidak ada riwayat transaksi yang ditemukan.</td></tr>';
         return;
       }
 
-      allOrders.slice(0, 15).forEach(o => {
+      dataList.forEach(o => {
         const dateObj = o.createdAt ? new Date(o.createdAt.seconds * 1000) : new Date();
         const timeStr = dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-        const dateStr = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' });
+        const dateStr = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
         container.innerHTML += `
           <tr class="hover:bg-zinc-800/40 transition">
@@ -346,10 +378,10 @@
       });
     }
 
-    // CARI RIWAYAT TANGGAL
+    // 1. FUNGSI CARI TANGGAL TRANSAKSI
     document.getElementById('btn-filter-date').addEventListener('click', () => {
       const val = document.getElementById('filter-date').value;
-      if (!val) return;
+      if (!val) return alert('Silakan pilih tanggal terlebih dahulu!');
 
       const targetDate = new Date(val).toDateString();
       let sum = 0;
@@ -363,36 +395,66 @@
         }
       });
 
+      const formattedVal = new Date(val).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
       document.getElementById('filter-date-result').innerHTML = `
-        <span class="text-white font-bold">Hasil Tanggal ${val}:</span> Total Omset 
-        <span class="text-red-500 font-bold">Rp ${sum.toLocaleString('id-ID')}</span> (${count} Transaksi).
+        <div class="bg-zinc-950 p-2.5 rounded-xl border border-zinc-800 mt-2">
+          <span class="text-zinc-200 font-bold block mb-0.5">Hasil Tanggal: ${formattedVal}</span>
+          Total Omset: <span class="text-red-500 font-extrabold">Rp ${sum.toLocaleString('id-ID')}</span> 
+          <span class="text-zinc-500 ml-1">(${count} Transaksi Masuk)</span>
+        </div>
       `;
     });
 
-    // CARI OMSET BULAN TERTENTU
+    // 2. FUNGSI CARI OMSET BULAN & TAHUN
     document.getElementById('btn-filter-month').addEventListener('click', () => {
-      const val = document.getElementById('filter-month').value; // Format: YYYY-MM
-      if (!val) return;
+      const val = document.getElementById('filter-month').value; // YYYY-MM
+      if (!val) return alert('Silakan pilih bulan & tahun terlebih dahulu!');
 
       const [year, month] = val.split('-');
+      const monthIndex = parseInt(month) - 1;
       let sum = 0;
       let count = 0;
 
       allOrders.forEach(o => {
         const d = o.createdAt ? new Date(o.createdAt.seconds * 1000) : new Date();
-        if (d.getFullYear() === parseInt(year) && (d.getMonth() + 1) === parseInt(month)) {
+        if (d.getFullYear() === parseInt(year) && d.getMonth() === monthIndex) {
           sum += (o.totalAmount || 0);
           count++;
         }
       });
 
       document.getElementById('filter-month-result').innerHTML = `
-        <span class="text-white font-bold">Hasil Bulan ${val}:</span> Total Omset 
-        <span class="text-amber-400 font-bold">Rp ${sum.toLocaleString('id-ID')}</span> (${count} Transaksi).
+        <div class="bg-zinc-950 p-2.5 rounded-xl border border-zinc-800 mt-2">
+          <span class="text-zinc-200 font-bold block mb-0.5">Hasil Periode: ${monthNames[monthIndex]} ${year}</span>
+          Total Omset: <span class="text-amber-400 font-extrabold">Rp ${sum.toLocaleString('id-ID')}</span> 
+          <span class="text-zinc-500 ml-1">(${count} Transaksi Terproses)</span>
+        </div>
       `;
     });
 
-    // INITALIZE CHART.JS
+    // 3. FUNGSI FILTER KALENDER TABEL TRANSAKSI TERBARU
+    document.getElementById('table-filter-date').addEventListener('change', (e) => {
+      const selectedDate = e.target.value;
+      if (!selectedDate) {
+        renderTable(allOrders);
+        return;
+      }
+
+      const targetDate = new Date(selectedDate).toDateString();
+      const filtered = allOrders.filter(o => {
+        const d = o.createdAt ? new Date(o.createdAt.seconds * 1000) : new Date();
+        return d.toDateString() === targetDate;
+      });
+
+      renderTable(filtered);
+    });
+
+    document.getElementById('btn-reset-table-filter').addEventListener('click', () => {
+      document.getElementById('table-filter-date').value = '';
+      renderTable(allOrders);
+    });
+
+    // GRAFIK CHART.JS
     function initChart(mode) {
       const ctx = document.getElementById('salesChart').getContext('2d');
       if (salesChartInstance) salesChartInstance.destroy();
@@ -401,11 +463,10 @@
       let dataValues = [];
 
       if (mode === 'day') {
-        // 7 Hari Terakhir
         for (let i = 6; i >= 0; i--) {
           const d = new Date();
           d.setDate(d.getDate() - i);
-          labels.push(d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' }));
+          labels.push(d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' }));
 
           let daySum = 0;
           allOrders.forEach(o => {
@@ -418,13 +479,30 @@
         }
       } else if (mode === 'week') {
         labels = ['Pekan 1', 'Pekan 2', 'Pekan 3', 'Pekan 4'];
-        dataValues = [1500000, 2300000, 1800000, 3100000]; // Sample/Agregat Pekan
+        let weekSums = [0, 0, 0, 0];
+        const now = new Date();
+
+        allOrders.forEach(o => {
+          const txD = o.createdAt ? new Date(o.createdAt.seconds * 1000) : new Date();
+          if (txD.getMonth() === now.getMonth() && txD.getFullYear() === now.getFullYear()) {
+            const dateNum = txD.getDate();
+            if (dateNum <= 7) weekSums[0] += (o.totalAmount || 0);
+            else if (dateNum <= 14) weekSums[1] += (o.totalAmount || 0);
+            else if (dateNum <= 21) weekSums[2] += (o.totalAmount || 0);
+            else weekSums[3] += (o.totalAmount || 0);
+          }
+        });
+        dataValues = weekSums;
       } else if (mode === 'month') {
         labels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
         dataValues = new Array(12).fill(0);
+        const currentYear = new Date().getFullYear();
+
         allOrders.forEach(o => {
           const txD = o.createdAt ? new Date(o.createdAt.seconds * 1000) : new Date();
-          dataValues[txD.getMonth()] += (o.totalAmount || 0);
+          if (txD.getFullYear() === currentYear) {
+            dataValues[txD.getMonth()] += (o.totalAmount || 0);
+          }
         });
       }
 
@@ -436,12 +514,13 @@
             label: 'Omset Penjualan (Rp)',
             data: dataValues,
             borderColor: '#E70011',
-            backgroundColor: 'rgba(231, 0, 17, 0.1)',
+            backgroundColor: 'rgba(231, 0, 17, 0.15)',
             fill: true,
-            tension: 0.4,
+            tension: 0.35,
             borderWidth: 3,
             pointBackgroundColor: '#E70011',
-            pointRadius: 4
+            pointRadius: 4,
+            pointHoverRadius: 6
           }]
         },
         options: {
@@ -457,14 +536,18 @@
             },
             y: {
               grid: { color: 'rgba(255, 255, 255, 0.05)' },
-              ticks: { color: '#a1a1aa', font: { size: 11 } }
+              ticks: { 
+                color: '#a1a1aa', 
+                font: { size: 11 },
+                callback: (val) => 'Rp ' + val.toLocaleString('id-ID')
+              }
             }
           }
         }
       });
     }
 
-    // TOGGLE CHART MODE BUTTONS
+    // EVENT TOGGLE TIPE GRAFIK
     document.getElementById('chart-btn-day').addEventListener('click', (e) => setChartMode(e.target, 'day'));
     document.getElementById('chart-btn-week').addEventListener('click', (e) => setChartMode(e.target, 'week'));
     document.getElementById('chart-btn-month').addEventListener('click', (e) => setChartMode(e.target, 'month'));
