@@ -2,6 +2,10 @@ import { db } from "./firebase-config.js";
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 let cart = [];
+let lastSavedCart = []; // Memori untuk menyimpan pesanan terakhir setelah checkout
+let lastSavedCustomer = "Pelanggan Umum";
+let lastSavedTable = "-";
+
 let allProducts = [];
 let allCashiers = [];
 let currentPayMethod = "CASH";
@@ -53,6 +57,7 @@ document.getElementById('logout-btn').addEventListener('click', () => {
   document.getElementById('login-modal').classList.remove('hidden');
   document.getElementById('login-form').reset();
   cart = [];
+  lastSavedCart = [];
   renderCart();
 });
 
@@ -301,7 +306,7 @@ document.querySelectorAll('#cat-tabs button').forEach(btn => {
   });
 });
 
-// 6. KERANJANG KASIR (CATATAN PER ITEM & SEBELAH QUANTITY)
+// 6. KERANJANG KASIR
 function addToCart(prod) {
   let finalPrice = prod.price;
   let discAmount = 0;
@@ -356,7 +361,6 @@ function renderCart() {
           </div>
         </div>
 
-        <!-- TAMPILAN QUANTITY & INPUT CATATAN PERSIS SEBELAHNYA -->
         <div class="flex items-center space-x-2 pt-1 border-t border-zinc-900">
           <div class="flex items-center space-x-1.5 bg-zinc-900 border border-zinc-800 p-1 rounded-lg flex-shrink-0">
             <button class="btn-minus w-5 h-5 bg-zinc-800 hover:bg-zinc-700 text-red-400 font-bold rounded flex items-center justify-center transition" data-index="${index}">-</button>
@@ -421,7 +425,7 @@ function calcChange() {
   document.getElementById('change-amount').innerText = 'Rp ' + (change > 0 ? change.toLocaleString('id-ID') : '0');
 }
 
-// 7. SIMPAN TRANSAKSI & CETAK STRUK (TANPA RNN QRIS)
+// 7. SIMPAN TRANSAKSI & CETAK STRUK
 document.getElementById('process-order-btn').addEventListener('click', async () => {
   if(cart.length === 0) return alert('Pilih pesanan terlebih dahulu!');
 
@@ -429,11 +433,14 @@ document.getElementById('process-order-btn').addEventListener('click', async () 
   const pay = currentPayMethod === 'QRIS' ? total : (parseFloat(document.getElementById('pay-amount').value) || 0);
   if(currentPayMethod === 'CASH' && pay < total) return alert('Uang pembayaran kurang!');
 
+  const customerName = document.getElementById('customer-select').value || "Pelanggan Umum";
+  const tableNumber = document.getElementById('table-no').value || "-";
+
   try {
     await addDoc(collection(db, "orders"), {
       cashierName: activeCashierName || "Kasir Siswa",
-      customerName: document.getElementById('customer-select').value || "Pelanggan Umum",
-      tableNumber: document.getElementById('table-no').value || "-",
+      customerName: customerName,
+      tableNumber: tableNumber,
       paymentMethod: currentPayMethod,
       status: "COMPLETED",
       items: cart,
@@ -443,8 +450,15 @@ document.getElementById('process-order-btn').addEventListener('click', async () 
       createdAt: serverTimestamp()
     });
 
+    // Simpan salinan transaksi ke memori sebelum dikosongkan
+    lastSavedCart = [...cart];
+    lastSavedCustomer = customerName;
+    lastSavedTable = tableNumber;
+
     printReceipt('kasir', activeCashierName || "Kasir Siswa");
-    alert(`Transaksi Berhasil Disimpan!`);
+    alert(`Transaksi Berhasil Disimpan! Silakan cetak Struk Dapur / Struk Bar jika diperlukan.`);
+    
+    // Kosongkan form dan keranjang untuk transaksi berikutnya
     cart = [];
     document.getElementById('pay-amount').value = '';
     renderCart();
@@ -454,18 +468,24 @@ document.getElementById('process-order-btn').addEventListener('click', async () 
   }
 });
 
+// Tombol Struk Dapur & Struk Bar mendukung cetak sebelum ATAU sesudah pembayaran
 document.getElementById('print-kitchen-btn').addEventListener('click', () => printReceipt('kitchen', activeCashierName || "Kasir Siswa"));
 document.getElementById('print-drink-btn').addEventListener('click', () => printReceipt('drink', activeCashierName || "Kasir Siswa"));
 
 function printReceipt(type, cashier) {
-  if(cart.length === 0) return alert('Keranjang belanja masih kosong!');
-  const customer = document.getElementById('customer-select').value || "Pelanggan Umum";
-  const table = document.getElementById('table-no').value || '-';
+  // Gunakan keranjang aktif jika ada, jika keranjang aktif kosong gunakan pesanan yang baru saja disimpan
+  let itemsToPrint = cart.length > 0 ? cart : lastSavedCart;
+  let customer = cart.length > 0 ? (document.getElementById('customer-select').value || "Pelanggan Umum") : lastSavedCustomer;
+  let table = cart.length > 0 ? (document.getElementById('table-no').value || '-') : lastSavedTable;
+
+  if(itemsToPrint.length === 0) return alert('Tidak ada transaksi yang dapat dicetak!');
 
   let receiptTitle = type === 'kasir' ? "=== STRUK BUKTI PEMBELIAN ===" : type === 'kitchen' ? "=== STRUK DAPUR ===" : "=== STRUK BAR ===";
-  let itemsToPrint = cart;
-  if(type === 'kitchen') itemsToPrint = cart.filter(i => i.category === 'makanan' || i.category === 'paket');
-  if(type === 'drink') itemsToPrint = cart.filter(i => i.category === 'minuman' || i.category === 'paket');
+  
+  if(type === 'kitchen') itemsToPrint = itemsToPrint.filter(i => i.category === 'makanan' || i.category === 'paket');
+  if(type === 'drink') itemsToPrint = itemsToPrint.filter(i => i.category === 'minuman' || i.category === 'paket');
+
+  if(itemsToPrint.length === 0) return alert(`Tidak ada menu kategori ${type === 'kitchen' ? 'makanan' : 'minuman'} pada pesanan ini.`);
 
   let printText = `${receiptTitle}\nCHICKEN FIRE MATARAM\nAlamat: Karanganyar - Jawa Tengah\nKasir: ${cashier}\nCustomer: ${customer}\nMeja: ${table}\nMetode: ${currentPayMethod}\n--------------------------------\n`;
 
