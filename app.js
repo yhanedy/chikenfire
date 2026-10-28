@@ -7,9 +7,9 @@ let allCashiers = [];
 let currentPayMethod = "CASH";
 let currentCategory = "semua";
 let activeCashierName = "";
-let adminMasterPassword = "1234"; // Password Master Admin Bawaan
+let adminMasterPassword = "1234";
 
-// 1. AUTENTIKASI LOGIN (ADMIN & KASIR)
+// 1. LOGIN UTAMA (ADMIN & KASIR)
 document.getElementById('login-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const role = document.getElementById('login-role').value;
@@ -56,7 +56,7 @@ document.getElementById('logout-btn').addEventListener('click', () => {
   renderCart();
 });
 
-// 2. KELOLA AKUN KASIR SISWA (ADMIN PANEL)
+// 2. KELOLA KASIR SISWA (ADMIN)
 document.getElementById('add-cashier-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const name = document.getElementById('cashier-name-input').value.trim();
@@ -70,7 +70,7 @@ document.getElementById('add-cashier-form').addEventListener('submit', async (e)
       password,
       createdAt: serverTimestamp()
     });
-    alert("Akun kasir siswa berhasil dibuat!");
+    alert("Akun kasir siswa berhasil ditambahkan!");
     document.getElementById('add-cashier-form').reset();
     loadCashiers();
   } catch (err) {
@@ -90,12 +90,12 @@ async function loadCashiers() {
       const data = d.data();
       allCashiers.push({ id: d.id, ...data });
       container.innerHTML += `
-        <div class="flex justify-between items-center bg-gray-50 border p-2 rounded text-xs">
+        <div class="flex justify-between items-center bg-zinc-950 border border-zinc-800 p-2 rounded-lg text-xs">
           <div>
-            <span class="font-bold text-gray-800">${data.name}</span>
-            <span class="text-[10px] text-gray-500 block">User: ${data.username} | Pass: ${data.password}</span>
+            <span class="font-bold text-zinc-200">${data.name}</span>
+            <span class="text-[10px] text-zinc-500 block">User: ${data.username} | Pass: ${data.password}</span>
           </div>
-          <button onclick="removeCashier('${d.id}')" class="bg-red-100 text-red-600 px-2 py-1 rounded font-bold hover:bg-red-200 text-[10px]">Hapus</button>
+          <button onclick="removeCashier('${d.id}')" class="bg-red-950 text-red-400 border border-red-800 px-2 py-1 rounded font-bold hover:bg-red-900 text-[10px]">Hapus</button>
         </div>
       `;
     });
@@ -111,18 +111,18 @@ window.removeCashier = async (id) => {
   }
 };
 
-// 3. GANTI PASSWORD ADMIN
+// 3. UPDATE PASSWORD MASTER ADMIN
 document.getElementById('change-admin-pass-form').addEventListener('submit', (e) => {
   e.preventDefault();
   const newPass = document.getElementById('new-admin-pass').value.trim();
   if(newPass) {
     adminMasterPassword = newPass;
-    alert("Password Admin berhasil diperbarui!");
+    alert("Password Master Admin diperbarui!");
     document.getElementById('change-admin-pass-form').reset();
   }
 });
 
-// 4. UPLOAD MENU BARU (DENGAN SAFE FALLBACK FOTO)
+// 4. MANAJEMEN MENU & DISKON (ADMIN)
 document.getElementById('add-product-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = document.getElementById('save-product-btn');
@@ -138,10 +138,10 @@ document.getElementById('add-product-form').addEventListener('submit', async (e)
     const fileInput = document.getElementById('prod-image-file');
     const file = fileInput.files[0];
 
-    let imageUrl = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300"; // Gambar default jika upload publik gagal
+    let imageUrl = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300";
 
     if (file) {
-      btn.innerText = "Mengunggah Foto...";
+      btn.innerText = "Upload Foto...";
       try {
         const formData = new FormData();
         formData.append("image", file);
@@ -157,7 +157,7 @@ document.getElementById('add-product-form').addEventListener('submit', async (e)
           imageUrl = imgurData.data.link;
         }
       } catch (imgErr) {
-        console.warn("Upload gambar eksternal gagal, memakai gambar bawaan:", imgErr);
+        console.warn("Upload foto external gagal, menggunakan foto default:", imgErr);
       }
     }
 
@@ -173,10 +173,9 @@ document.getElementById('add-product-form').addEventListener('submit', async (e)
       createdAt: serverTimestamp()
     });
 
-    alert("Menu berhasil ditambahkan!");
+    alert("Menu berhasil disimpan!");
     document.getElementById('add-product-form').reset();
     loadAdminProducts();
-
   } catch (err) {
     console.error("Error Simpan Menu:", err);
     alert("Terjadi kesalahan saat menyimpan menu.");
@@ -186,11 +185,10 @@ document.getElementById('add-product-form').addEventListener('submit', async (e)
   }
 });
 
-// MENAMPILKAN DAFTAR MENU DI ADMIN PANEL (+ HAPUS)
 async function loadAdminProducts() {
   const container = document.getElementById('admin-menu-list');
   if(!container) return;
-  container.innerHTML = '<p class="text-xs text-gray-400 text-center py-5">Memuat menu...</p>';
+  container.innerHTML = '<p class="text-xs text-zinc-500 text-center py-5">Memuat menu...</p>';
 
   try {
     const snap = await getDocs(collection(db, "products"));
@@ -200,15 +198,15 @@ async function loadAdminProducts() {
       let discTag = p.discountType === 'percent' ? `${p.discountValue}% OFF` : p.discountType === 'nominal' ? `Pot. Rp ${p.discountValue.toLocaleString('id-ID')}` : '';
       
       container.innerHTML += `
-        <div class="flex items-center justify-between border p-2 rounded-lg bg-gray-50 text-xs">
+        <div class="flex items-center justify-between border border-zinc-800 p-2 rounded-lg bg-zinc-950 text-xs">
           <div class="flex items-center space-x-2">
-            <img src="${p.imageUrl}" class="w-10 h-10 object-cover rounded" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300'">
+            <img src="${p.imageUrl}" class="w-10 h-10 object-cover rounded-md" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300'">
             <div>
-              <h5 class="font-bold text-gray-800">${p.name}</h5>
-              <p class="text-gray-500 text-[10px]">Rp ${p.price.toLocaleString('id-ID')} ${discTag ? `<span class="text-red-600 font-bold ml-1">(${discTag})</span>` : ''}</p>
+              <h5 class="font-bold text-zinc-200">${p.name}</h5>
+              <p class="text-zinc-400 text-[10px]">Rp ${p.price.toLocaleString('id-ID')} ${discTag ? `<span class="text-red-500 font-bold ml-1">(${discTag})</span>` : ''}</p>
             </div>
           </div>
-          <button onclick="deleteProduct('${docSnap.id}')" class="bg-red-600 text-white px-2.5 py-1 rounded text-[10px] font-bold hover:bg-red-700">
+          <button onclick="deleteProduct('${docSnap.id}')" class="bg-red-950 text-red-400 border border-red-800 px-2.5 py-1 rounded text-[10px] font-bold hover:bg-red-900">
             <i class="fas fa-trash-alt mr-1"></i> Delete
           </button>
         </div>
@@ -226,11 +224,11 @@ window.deleteProduct = async (id) => {
   }
 };
 
-// 5. KATALOG KASIR (HITUNG DISKON OTOMATIS)
+// 5. KATALOG PRODUK KASIR
 async function loadProducts() {
   const grid = document.getElementById('product-grid');
   if(!grid) return;
-  grid.innerHTML = '<p class="text-xs text-gray-400 col-span-4 text-center py-10">Memuat menu...</p>';
+  grid.innerHTML = '<p class="text-xs text-zinc-500 col-span-4 text-center py-10">Memuat menu...</p>';
   
   try {
     const querySnapshot = await getDocs(collection(db, "products"));
@@ -253,26 +251,30 @@ function renderProducts() {
 
   filtered.forEach(p => {
     let finalPrice = p.price;
+    let discAmount = 0;
     let hasDiscount = false;
+
     if (p.discountType === 'percent' && p.discountValue > 0) {
-      finalPrice = p.price - (p.price * (p.discountValue / 100));
+      discAmount = p.price * (p.discountValue / 100);
+      finalPrice = p.price - discAmount;
       hasDiscount = true;
     } else if (p.discountType === 'nominal' && p.discountValue > 0) {
-      finalPrice = p.price - p.discountValue;
+      discAmount = p.discountValue;
+      finalPrice = p.price - discAmount;
       hasDiscount = true;
     }
 
     grid.innerHTML += `
-      <div class="product-card bg-white border-2 border-gray-100 rounded-xl overflow-hidden shadow-sm hover:border-red-500 cursor-pointer transition relative" data-id="${p.id}">
-        ${hasDiscount ? `<span class="absolute top-1 right-1 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">PROMO</span>` : ''}
-        <img src="${p.imageUrl}" class="w-full h-24 object-cover" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300'">
-        <div class="p-2">
-          <h4 class="font-bold text-gray-800 text-xs truncate">${p.name}</h4>
+      <div class="product-card bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-sm hover:border-red-600 cursor-pointer transition relative group" data-id="${p.id}">
+        ${hasDiscount ? `<span class="absolute top-1.5 right-1.5 bg-red-600 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded shadow">PROMO</span>` : ''}
+        <img src="${p.imageUrl}" class="w-full h-24 object-cover group-hover:scale-105 transition duration-200" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300'">
+        <div class="p-2.5">
+          <h4 class="font-bold text-zinc-100 text-xs truncate">${p.name}</h4>
           ${hasDiscount ? `
-            <p class="text-gray-400 line-through text-[10px]">Rp ${p.price.toLocaleString('id-ID')}</p>
-            <p class="text-merah-id font-black text-xs">Rp ${finalPrice.toLocaleString('id-ID')}</p>
+            <p class="text-zinc-500 line-through text-[10px]">Rp ${p.price.toLocaleString('id-ID')}</p>
+            <p class="text-red-500 font-black text-xs">Rp ${finalPrice.toLocaleString('id-ID')}</p>
           ` : `
-            <p class="text-merah-id font-black text-xs">Rp ${p.price.toLocaleString('id-ID')}</p>
+            <p class="text-red-500 font-black text-xs">Rp ${p.price.toLocaleString('id-ID')}</p>
           `}
         </div>
       </div>
@@ -290,28 +292,32 @@ function renderProducts() {
 document.querySelectorAll('#cat-tabs button').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('#cat-tabs button').forEach(b => {
-      b.className = "cat-btn bg-gray-100 text-gray-700 font-bold px-4 py-1.5 rounded-t-lg text-xs hover:bg-red-50";
+      b.className = "cat-btn bg-zinc-900 text-zinc-400 border border-zinc-800 font-bold px-3.5 py-1.5 rounded-lg text-xs hover:bg-zinc-800 transition";
     });
-    btn.className = "cat-btn bg-merah-id text-white font-bold px-4 py-1.5 rounded-t-lg text-xs";
+    btn.className = "cat-btn bg-red-600 text-white font-bold px-3.5 py-1.5 rounded-lg text-xs shadow transition";
     currentCategory = btn.dataset.cat;
     renderProducts();
   });
 });
 
-// 6. KERANJANG & STRUK (ALAMAT: KARANGANYAR - JAWA TENGAH)
+// 6. KERANJANG KASIR (PERBAIKAN WARNA TEKS KUANTITAS BERWARNA HIJAU/PUTIH TERANG)
 function addToCart(prod) {
   let finalPrice = prod.price;
+  let discAmount = 0;
+
   if (prod.discountType === 'percent' && prod.discountValue > 0) {
-    finalPrice = prod.price - (prod.price * (prod.discountValue / 100));
+    discAmount = prod.price * (prod.discountValue / 100);
+    finalPrice = prod.price - discAmount;
   } else if (prod.discountType === 'nominal' && prod.discountValue > 0) {
-    finalPrice = prod.price - prod.discountValue;
+    discAmount = prod.discountValue;
+    finalPrice = prod.price - discAmount;
   }
 
   const existing = cart.find(i => i.id === prod.id);
   if(existing) {
     existing.qty += 1;
   } else {
-    cart.push({ ...prod, finalPrice, qty: 1 });
+    cart.push({ ...prod, finalPrice, discAmount, qty: 1 });
   }
   renderCart();
 }
@@ -322,21 +328,36 @@ function renderCart() {
   container.innerHTML = '';
   let total = 0;
 
+  if(cart.length === 0) {
+    container.innerHTML = '<p class="text-xs text-zinc-500 text-center py-8">Keranjang belanja kosong</p>';
+    document.getElementById('cart-total').innerText = 'Rp 0';
+    calcChange();
+    return;
+  }
+
   cart.forEach((item, index) => {
     const subtotal = item.finalPrice * item.qty;
     total += subtotal;
+
     container.innerHTML += `
-      <div class="flex justify-between items-center bg-white p-2 rounded-lg border text-xs">
+      <div class="bg-zinc-950 border border-zinc-800 p-2.5 rounded-xl flex items-center justify-between text-xs">
         <div class="w-1/2">
-          <div class="font-bold text-gray-800 truncate">${item.name}</div>
-          <div class="text-gray-400 text-[10px]">Rp ${item.finalPrice.toLocaleString('id-ID')}</div>
+          <div class="font-bold text-zinc-100 truncate">${item.name}</div>
+          <div class="text-zinc-400 text-[10px]">
+            Rp ${item.finalPrice.toLocaleString('id-ID')}
+            ${item.discAmount > 0 ? `<span class="text-red-400 font-bold ml-1">(Disc Rp ${item.discAmount.toLocaleString('id-ID')})</span>` : ''}
+          </div>
         </div>
-        <div class="flex items-center space-x-1">
-          <button class="btn-minus w-5 h-5 bg-gray-200 text-gray-700 font-bold rounded" data-index="${index}">-</button>
-          <span class="font-bold w-4 text-center">${item.qty}</span>
-          <button class="btn-plus w-5 h-5 bg-red-600 text-white font-bold rounded" data-index="${index}">+</button>
+
+        <div class="flex items-center space-x-1.5 bg-zinc-900 border border-zinc-800 p-1 rounded-lg">
+          <button class="btn-minus w-5 h-5 bg-zinc-800 hover:bg-zinc-700 text-red-400 font-bold rounded flex items-center justify-center transition" data-index="${index}">-</button>
+          <span class="font-black text-white w-5 text-center text-xs">${item.qty}</span>
+          <button class="btn-plus w-5 h-5 bg-red-600 hover:bg-red-700 text-white font-bold rounded flex items-center justify-center transition" data-index="${index}">+</button>
         </div>
-        <div class="font-bold text-merah-id w-16 text-right">Rp ${subtotal.toLocaleString('id-ID')}</div>
+
+        <div class="font-black text-red-500 w-20 text-right">
+          Rp ${subtotal.toLocaleString('id-ID')}
+        </div>
       </div>
     `;
   });
@@ -344,6 +365,7 @@ function renderCart() {
   document.getElementById('cart-total').innerText = 'Rp ' + total.toLocaleString('id-ID');
   document.querySelectorAll('.btn-minus').forEach(b => b.addEventListener('click', (e) => updateQty(e.target.dataset.index, -1)));
   document.querySelectorAll('.btn-plus').forEach(b => b.addEventListener('click', (e) => updateQty(e.target.dataset.index, 1)));
+  calcChange();
 }
 
 function updateQty(idx, change) {
@@ -368,19 +390,28 @@ function setPaymentMethod(m) {
   const qrisGroup = document.getElementById('qris-input-group');
 
   if(m === 'CASH') {
-    btnC.className = "py-1.5 rounded-md border text-xs font-bold border-red-600 bg-red-600 text-white";
-    btnQ.className = "py-1.5 rounded-md border text-xs font-bold border-gray-300 bg-gray-100 text-gray-700";
+    btnC.className = "py-2 rounded-lg border text-xs font-bold border-red-600 bg-red-600 text-white transition";
+    btnQ.className = "py-2 rounded-lg border text-xs font-bold border-zinc-800 bg-zinc-900 text-zinc-400 hover:bg-zinc-800 transition";
     cashGroup.classList.remove('hidden');
     qrisGroup.classList.add('hidden');
   } else {
-    btnQ.className = "py-1.5 rounded-md border text-xs font-bold border-red-600 bg-red-600 text-white";
-    btnC.className = "py-1.5 rounded-md border text-xs font-bold border-gray-300 bg-gray-100 text-gray-700";
+    btnQ.className = "py-2 rounded-lg border text-xs font-bold border-blue-600 bg-blue-600 text-white transition";
+    btnC.className = "py-2 rounded-lg border text-xs font-bold border-zinc-800 bg-zinc-900 text-zinc-400 hover:bg-zinc-800 transition";
     qrisGroup.classList.remove('hidden');
     cashGroup.classList.add('hidden');
   }
 }
 
-// SIMPAN TRANSAKSI & AUTOMATIC STRUK KASIR
+document.getElementById('pay-amount').addEventListener('input', calcChange);
+
+function calcChange() {
+  const total = cart.reduce((sum, item) => sum + (item.finalPrice * item.qty), 0);
+  const pay = parseFloat(document.getElementById('pay-amount').value) || 0;
+  const change = pay - total;
+  document.getElementById('change-amount').innerText = 'Rp ' + (change > 0 ? change.toLocaleString('id-ID') : '0');
+}
+
+// 7. SIMPAN TRANSAKSI & PROSES CETAK STRUK
 document.getElementById('process-order-btn').addEventListener('click', async () => {
   if(cart.length === 0) return alert('Pilih pesanan terlebih dahulu!');
   
@@ -396,7 +427,7 @@ document.getElementById('process-order-btn').addEventListener('click', async () 
   try {
     await addDoc(collection(db, "orders"), {
       cashierName: activeCashierName || "Kasir Siswa",
-      customerName: document.getElementById('customer-select').value,
+      customerName: document.getElementById('customer-select').value || "Pelanggan Umum",
       tableNumber: document.getElementById('table-no').value || "-",
       paymentMethod: currentPayMethod,
       qrisRRN: currentPayMethod === 'QRIS' ? qrisRRN : "-",
@@ -419,13 +450,12 @@ document.getElementById('process-order-btn').addEventListener('click', async () 
   }
 });
 
-// CETAK STRUK DAPUR & BAR
 document.getElementById('print-kitchen-btn').addEventListener('click', () => printReceipt('kitchen', activeCashierName || "Kasir Siswa"));
 document.getElementById('print-drink-btn').addEventListener('click', () => printReceipt('drink', activeCashierName || "Kasir Siswa"));
 
 function printReceipt(type, cashier) {
   if(cart.length === 0) return alert('Keranjang belanja masih kosong!');
-  const customer = document.getElementById('customer-select').value;
+  const customer = document.getElementById('customer-select').value || "Pelanggan Umum";
   const table = document.getElementById('table-no').value || '-';
   const qrisRRN = document.getElementById('qris-rrn-input').value.trim();
 
@@ -434,7 +464,7 @@ function printReceipt(type, cashier) {
   if(type === 'kitchen') itemsToPrint = cart.filter(i => i.category === 'makanan' || i.category === 'paket');
   if(type === 'drink') itemsToPrint = cart.filter(i => i.category === 'minuman' || i.category === 'paket');
 
-  let printText = `${receiptTitle}\nCHICKEN FIRE MATARAM\nAlamat: Karanganyar - Jawa Tengah\nKasir: ${cashier}\nPelanggan: ${customer}\nMeja: ${table}\nMetode: ${currentPayMethod}\n`;
+  let printText = `${receiptTitle}\nCHICKEN FIRE MATARAM\nAlamat: Karanganyar - Jawa Tengah\nKasir: ${cashier}\nCustomer: ${customer}\nMeja: ${table}\nMetode: ${currentPayMethod}\n`;
   if(currentPayMethod === 'QRIS' && qrisRRN) {
     printText += `RRN QRIS: ${qrisRRN}\n`;
   }
@@ -442,58 +472,13 @@ function printReceipt(type, cashier) {
 
   itemsToPrint.forEach(i => {
     printText += `${i.name} x${i.qty} = Rp ${(i.finalPrice * i.qty).toLocaleString('id-ID')}\n`;
+    if(i.discAmount > 0) {
+      printText += ` (Potongan Disc: Rp ${(i.discAmount * i.qty).toLocaleString('id-ID')})\n`;
+    }
   });
   printText += `--------------------------------\nTerima Kasih Atas Kunjungan Anda!\nNikmati Pedasnya Chicken Fire!`;
 
   alert(printText);
 }
-
-// 7. EXPORT LAPORAN EXCEL
-document.getElementById('export-excel-btn').addEventListener('click', async () => {
-  try {
-    const period = document.getElementById('export-filter-period').value;
-    const snap = await getDocs(collection(db, "orders"));
-    let reportData = [];
-    const now = new Date();
-
-    snap.forEach((docSnap) => {
-      const data = docSnap.data();
-      const txDate = data.createdAt ? new Date(data.createdAt.seconds * 1000) : new Date();
-      
-      let include = true;
-      if (period === 'minggu') {
-        const diffDays = (now - txDate) / (1000 * 3600 * 24);
-        if (diffDays > 7) include = false;
-      } else if (period === 'bulan') {
-        if (txDate.getMonth() !== now.getMonth() || txDate.getFullYear() !== now.getFullYear()) include = false;
-      }
-
-      if (include) {
-        reportData.push({
-          "ID Transaksi": docSnap.id,
-          "Tanggal": txDate.toLocaleString('id-ID'),
-          "Lokasi": "Karanganyar - Jawa Tengah",
-          "Input Oleh Kasir": data.cashierName || "-",
-          "Nama Pelanggan": data.customerName,
-          "No Meja": data.tableNumber,
-          "Metode Bayar": data.paymentMethod,
-          "Kode RRN QRIS": data.qrisRRN || "-",
-          "Total Belanja (Rp)": data.totalAmount,
-          "Uang Bayar (Rp)": data.paidAmount,
-          "Kembalian (Rp)": data.changeAmount
-        });
-      }
-    });
-
-    if(reportData.length === 0) return alert('Tidak ada data transaksi pada periode ini.');
-
-    const worksheet = XLSX.utils.json_to_sheet(reportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan Omset");
-    XLSX.writeFile(workbook, `Laporan_ChickenFire_${period}_${new Date().toISOString().split('T')[0]}.xlsx`);
-  } catch (err) {
-    console.error("Gagal export excel:", err);
-  }
-});
 
 loadCashiers();
