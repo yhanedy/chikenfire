@@ -1,8 +1,7 @@
-import { db } from "./firebase-config.js";
-import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { sql } from "./neon-config.js";
 
 let cart = [];
-let lastSavedCart = []; // Memori untuk menyimpan pesanan terakhir setelah checkout
+let lastSavedCart = [];
 let lastSavedCustomer = "Pelanggan Umum";
 let lastSavedTable = "-";
 
@@ -38,6 +37,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
       errorMsg.classList.remove('hidden');
     }
   } else if (role === 'kasir') {
+    await loadCashiers();
     const cashierMatch = allCashiers.find(c => c.username === u && c.password === p);
     if (cashierMatch || (u === 'kasir' && p === 'kasir123')) {
       activeCashierName = cashierMatch ? cashierMatch.name : "Kasir Siswa";
@@ -61,7 +61,7 @@ document.getElementById('logout-btn').addEventListener('click', () => {
   renderCart();
 });
 
-// 2. KELOLA KASIR SISWA
+// 2. KELOLA KASIR SISWA (NEON SQL)
 document.getElementById('add-cashier-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const name = document.getElementById('cashier-name-input').value.trim();
@@ -69,17 +69,16 @@ document.getElementById('add-cashier-form').addEventListener('submit', async (e)
   const password = document.getElementById('cashier-pass-input').value.trim();
 
   try {
-    await addDoc(collection(db, "cashiers"), {
-      name,
-      username,
-      password,
-      createdAt: serverTimestamp()
-    });
-    alert("Akun kasir siswa berhasil ditambahkan!");
+    await sql`
+      INSERT INTO cashiers (name, username, password)
+      VALUES (${name}, ${username}, ${password})
+    `;
+    alert("Akun kasir siswa berhasil ditambahkan ke Neon DB!");
     document.getElementById('add-cashier-form').reset();
     loadCashiers();
   } catch (err) {
     console.error("Gagal menambah akun kasir:", err);
+    alert("Gagal menambah akun kasir. Username mungkin sudah terpakai.");
   }
 });
 
@@ -90,17 +89,16 @@ async function loadCashiers() {
   allCashiers = [];
 
   try {
-    const snap = await getDocs(collection(db, "cashiers"));
-    snap.forEach((d) => {
-      const data = d.data();
-      allCashiers.push({ id: d.id, ...data });
+    const rows = await sql`SELECT * FROM cashiers ORDER BY created_at DESC`;
+    allCashiers = rows;
+    rows.forEach((c) => {
       container.innerHTML += `
         <div class="flex justify-between items-center bg-zinc-950 border border-zinc-800 p-2 rounded-lg text-xs">
           <div>
-            <span class="font-bold text-zinc-200">${data.name}</span>
-            <span class="text-[10px] text-zinc-500 block">User: ${data.username} | Pass: ${data.password}</span>
+            <span class="font-bold text-zinc-200">${c.name}</span>
+            <span class="text-[10px] text-zinc-500 block">User: ${c.username} | Pass: ${c.password}</span>
           </div>
-          <button onclick="removeCashier('${d.id}')" class="bg-red-950 text-red-400 border border-red-800 px-2 py-1 rounded font-bold hover:bg-red-900 text-[10px]">Hapus</button>
+          <button onclick="removeCashier(${c.id})" class="bg-red-950 text-red-400 border border-red-800 px-2 py-1 rounded font-bold hover:bg-red-900 text-[10px]">Hapus</button>
         </div>
       `;
     });
@@ -111,7 +109,7 @@ async function loadCashiers() {
 
 window.removeCashier = async (id) => {
   if(confirm("Hapus akun kasir ini?")) {
-    await deleteDoc(doc(db, "cashiers", id));
+    await sql`DELETE FROM cashiers WHERE id = ${id}`;
     loadCashiers();
   }
 };
@@ -127,7 +125,7 @@ document.getElementById('change-admin-pass-form').addEventListener('submit', (e)
   }
 });
 
-// 4. UPLOAD MENU BARU
+// 4. UPLOAD MENU BARU (NEON SQL)
 document.getElementById('add-product-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = document.getElementById('save-product-btn');
@@ -166,19 +164,14 @@ document.getElementById('add-product-form').addEventListener('submit', async (e)
       }
     }
 
-    btn.innerText = "Menyimpan ke Database...";
+    btn.innerText = "Menyimpan ke Neon DB...";
 
-    await addDoc(collection(db, "products"), {
-      name,
-      category,
-      price,
-      discountType,
-      discountValue,
-      imageUrl,
-      createdAt: serverTimestamp()
-    });
+    await sql`
+      INSERT INTO products (name, category, price, discount_type, discount_value, image_url)
+      VALUES (${name}, ${category}, ${price}, ${discountType}, ${discountValue}, ${imageUrl})
+    `;
 
-    alert("Menu berhasil ditambahkan!");
+    alert("Menu berhasil ditambahkan ke Neon PostgreSQL!");
     document.getElementById('add-product-form').reset();
     loadAdminProducts();
 
@@ -197,54 +190,58 @@ async function loadAdminProducts() {
   container.innerHTML = '<p class="text-xs text-zinc-500 text-center py-5">Memuat menu...</p>';
 
   try {
-    const snap = await getDocs(collection(db, "products"));
+    const rows = await sql`SELECT * FROM products ORDER BY created_at DESC`;
     container.innerHTML = '';
-    snap.forEach((docSnap) => {
-      const p = docSnap.data();
-      let discTag = p.discountType === 'percent' ? `${p.discountValue}% OFF` : p.discountType === 'nominal' ? `Pot. Rp ${p.discountValue.toLocaleString('id-ID')}` : '';
+    rows.forEach((p) => {
+      let discTag = p.discount_type === 'percent' ? `${p.discount_value}% OFF` : p.discount_type === 'nominal' ? `Pot. Rp ${parseFloat(p.discount_value).toLocaleString('id-ID')}` : '';
       
       container.innerHTML += `
         <div class="flex items-center justify-between border border-zinc-800 p-2 rounded-lg bg-zinc-950 text-xs">
           <div class="flex items-center space-x-2">
-            <img src="${p.imageUrl}" class="w-10 h-10 object-cover rounded-md" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300'">
+            <img src="${p.image_url}" class="w-10 h-10 object-cover rounded-md" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300'">
             <div>
               <h5 class="font-bold text-zinc-200">${p.name}</h5>
-              <p class="text-zinc-400 text-[10px]">Rp ${p.price.toLocaleString('id-ID')} ${discTag ? `<span class="text-red-500 font-bold ml-1">(${discTag})</span>` : ''}</p>
+              <p class="text-zinc-400 text-[10px]">Rp ${parseFloat(p.price).toLocaleString('id-ID')} ${discTag ? `<span class="text-red-500 font-bold ml-1">(${discTag})</span>` : ''}</p>
             </div>
           </div>
-          <button onclick="deleteProduct('${docSnap.id}')" class="bg-red-950 text-red-400 border border-red-800 px-2.5 py-1 rounded text-[10px] font-bold hover:bg-red-900">
+          <button onclick="deleteProduct(${p.id})" class="bg-red-950 text-red-400 border border-red-800 px-2.5 py-1 rounded text-[10px] font-bold hover:bg-red-900">
             <i class="fas fa-trash-alt mr-1"></i> Delete
           </button>
         </div>
       `;
     });
   } catch(err) {
-    container.innerHTML = '<p class="text-xs text-red-500 text-center">Gagal memuat menu.</p>';
+    container.innerHTML = '<p class="text-xs text-red-500 text-center">Gagal memuat menu dari Neon DB.</p>';
   }
 }
 
 window.deleteProduct = async (id) => {
   if(confirm("Yakin ingin menghapus menu ini?")) {
-    await deleteDoc(doc(db, "products", id));
+    await sql`DELETE FROM products WHERE id = ${id}`;
     loadAdminProducts();
   }
 };
 
-// 5. KATALOG KASIR
+// 5. KATALOG KASIR (NEON SQL)
 async function loadProducts() {
   const grid = document.getElementById('product-grid');
   if(!grid) return;
   grid.innerHTML = '<p class="text-xs text-zinc-500 col-span-4 text-center py-10">Memuat menu...</p>';
   
   try {
-    const querySnapshot = await getDocs(collection(db, "products"));
-    allProducts = [];
-    querySnapshot.forEach((doc) => {
-      allProducts.push({ id: doc.id, ...doc.data() });
-    });
+    const rows = await sql`SELECT * FROM products ORDER BY id DESC`;
+    allProducts = rows.map(p => ({
+      id: p.id,
+      name: p.name,
+      category: p.category,
+      price: parseFloat(p.price),
+      discountType: p.discount_type,
+      discountValue: parseFloat(p.discount_value),
+      imageUrl: p.image_url
+    }));
     renderProducts();
   } catch (err) {
-    grid.innerHTML = '<p class="text-xs text-red-500 col-span-4 text-center py-10">Gagal memuat produk!</p>';
+    grid.innerHTML = '<p class="text-xs text-red-500 col-span-4 text-center py-10">Gagal memuat produk dari Neon DB!</p>';
   }
 }
 
@@ -289,7 +286,7 @@ function renderProducts() {
 
   document.querySelectorAll('.product-card').forEach(card => {
     card.addEventListener('click', () => {
-      const prod = allProducts.find(p => p.id === card.dataset.id);
+      const prod = allProducts.find(p => p.id == card.dataset.id);
       if(prod) addToCart(prod);
     });
   });
@@ -425,7 +422,7 @@ function calcChange() {
   document.getElementById('change-amount').innerText = 'Rp ' + (change > 0 ? change.toLocaleString('id-ID') : '0');
 }
 
-// 7. SIMPAN TRANSAKSI & CETAK STRUK
+// 7. SIMPAN TRANSAKSI KE NEON DB (ORDERS & ORDER_ITEMS)
 document.getElementById('process-order-btn').addEventListener('click', async () => {
   if(cart.length === 0) return alert('Pilih pesanan terlebih dahulu!');
 
@@ -437,43 +434,41 @@ document.getElementById('process-order-btn').addEventListener('click', async () 
   const tableNumber = document.getElementById('table-no').value || "-";
 
   try {
-    await addDoc(collection(db, "orders"), {
-      cashierName: activeCashierName || "Kasir Siswa",
-      customerName: customerName,
-      tableNumber: tableNumber,
-      paymentMethod: currentPayMethod,
-      status: "COMPLETED",
-      items: cart,
-      totalAmount: total,
-      paidAmount: pay,
-      changeAmount: pay - total,
-      createdAt: serverTimestamp()
-    });
+    // 1. Simpan ke Tabel Orders
+    const [newOrder] = await sql`
+      INSERT INTO orders (cashier_name, customer_name, table_number, payment_method, status, total_amount, paid_amount, change_amount)
+      VALUES (${activeCashierName || "Kasir Siswa"}, ${customerName}, ${tableNumber}, ${currentPayMethod}, 'COMPLETED', ${total}, ${pay}, ${pay - total})
+      RETURNING id
+    `;
 
-    // Simpan salinan transaksi ke memori sebelum dikosongkan
+    // 2. Simpan Detail Item ke Tabel Order_Items
+    for (const item of cart) {
+      await sql`
+        INSERT INTO order_items (order_id, product_name, qty, price, discount_amount, item_note)
+        VALUES (${newOrder.id}, ${item.name}, ${item.qty}, ${item.finalPrice}, ${item.discAmount}, ${item.itemNote || ''})
+      `;
+    }
+
     lastSavedCart = [...cart];
     lastSavedCustomer = customerName;
     lastSavedTable = tableNumber;
 
     printReceipt('kasir', activeCashierName || "Kasir Siswa");
-    alert(`Transaksi Berhasil Disimpan! Silakan cetak Struk Dapur / Struk Bar jika diperlukan.`);
+    alert(`Transaksi Berhasil Disimpan ke Neon PostgreSQL!`);
     
-    // Kosongkan form dan keranjang untuk transaksi berikutnya
     cart = [];
     document.getElementById('pay-amount').value = '';
     renderCart();
   } catch (err) {
-    console.error("Gagal simpan transaksi:", err);
-    alert("Terjadi kesalahan saat menyimpan transaksi.");
+    console.error("Gagal simpan transaksi ke Neon:", err);
+    alert("Terjadi kesalahan saat menyimpan transaksi ke database.");
   }
 });
 
-// Tombol Struk Dapur & Struk Bar mendukung cetak sebelum ATAU sesudah pembayaran
 document.getElementById('print-kitchen-btn').addEventListener('click', () => printReceipt('kitchen', activeCashierName || "Kasir Siswa"));
 document.getElementById('print-drink-btn').addEventListener('click', () => printReceipt('drink', activeCashierName || "Kasir Siswa"));
 
 function printReceipt(type, cashier) {
-  // Gunakan keranjang aktif jika ada, jika keranjang aktif kosong gunakan pesanan yang baru saja disimpan
   let itemsToPrint = cart.length > 0 ? cart : lastSavedCart;
   let customer = cart.length > 0 ? (document.getElementById('customer-select').value || "Pelanggan Umum") : lastSavedCustomer;
   let table = cart.length > 0 ? (document.getElementById('table-no').value || '-') : lastSavedTable;
