@@ -5,12 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chicken Fire Mataram - Riwayat & Analitik</title>
   
-  <!-- Tailwind CSS & FontAwesome CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
-  <!-- Google Fonts Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -20,14 +18,8 @@
       darkMode: 'class',
       theme: {
         extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-          },
-          colors: {
-            brand: {
-              red: '#E70011',
-            }
-          }
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: { brand: { red: '#E70011' } }
         }
       }
     }
@@ -37,7 +29,6 @@
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #09090b; }
     ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
     
     input[type="date"]::-webkit-calendar-picker-indicator,
     input[type="month"]::-webkit-calendar-picker-indicator {
@@ -46,15 +37,15 @@
     }
   </style>
 </head>
-<body class="bg-zinc-950 text-zinc-100 font-sans min-h-screen flex flex-col antialiased selection:bg-red-500 selection:text-white">
+<body class="bg-zinc-950 text-zinc-100 font-sans min-h-screen flex flex-col antialiased">
 
-  <!-- HEADER NAVIGATION -->
+  <!-- HEADER -->
   <header class="bg-zinc-900 border-b border-zinc-800 px-6 py-3.5 flex items-center justify-between sticky top-0 z-40 shadow-sm">
     <div class="flex items-center space-x-3">
       <img src="https://lh3.googleusercontent.com/d/1SlFhu3ctTmnSSjbNX-60E0-3khaYuSqp" alt="Logo" class="w-9 h-9 rounded-full object-cover border border-red-600 shadow">
       <div>
         <h1 class="font-black text-sm tracking-wide text-white leading-none">CHICKEN FIRE MATARAM</h1>
-        <span class="text-[10px] text-zinc-400 font-medium">Karanganyar - Jawa Tengah • Riwayat Transaksi</span>
+        <span class="text-[10px] text-zinc-400 font-medium">Riwayat Transaksi • Neon PostgreSQL</span>
       </div>
     </div>
 
@@ -65,317 +56,150 @@
     </div>
   </header>
 
-  <!-- MAIN DASHBOARD CONTENT -->
+  <!-- DASHBOARD MAIN -->
   <main class="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">
 
-    <!-- TOP STATS CARDS -->
+    <!-- STATS CARDS -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      
-      <!-- Card 1: Omset Hari Ini -->
-      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 relative overflow-hidden group hover:border-zinc-700 transition">
-        <div class="flex justify-between items-start">
-          <div>
-            <p class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Omset Hari Ini</p>
-            <h3 id="stat-today-revenue" class="text-2xl font-black text-white mt-1">Rp 0</h3>
-          </div>
-          <div class="p-2.5 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl">
-            <i class="fas fa-cash-register text-lg"></i>
-          </div>
-        </div>
-        <p class="text-[11px] text-zinc-500 mt-3 font-medium flex items-center">
-          <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-2"></span> Transaksi Berhasil
-        </p>
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+        <p class="text-[11px] font-bold text-zinc-400 uppercase">Omset Hari Ini</p>
+        <h3 id="stat-today-revenue" class="text-2xl font-black text-white mt-1">Rp 0</h3>
       </div>
-
-      <!-- Card 2: Jumlah Transaksi Hari Ini -->
-      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 relative overflow-hidden group hover:border-zinc-700 transition">
-        <div class="flex justify-between items-start">
-          <div>
-            <p class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Transaksi Hari Ini</p>
-            <h3 id="stat-today-count" class="text-2xl font-black text-white mt-1">0 Trx</h3>
-          </div>
-          <div class="p-2.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl">
-            <i class="fas fa-receipt text-lg"></i>
-          </div>
-        </div>
-        <p class="text-[11px] text-zinc-500 mt-3 font-medium flex items-center">
-          <i class="fas fa-users text-zinc-400 mr-1.5"></i> Total Pelanggan Dilayani
-        </p>
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+        <p class="text-[11px] font-bold text-zinc-400 uppercase">Transaksi Hari Ini</p>
+        <h3 id="stat-today-count" class="text-2xl font-black text-white mt-1">0 Trx</h3>
       </div>
-
-      <!-- Card 3: Rata-rata Nilai Order -->
-      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 relative overflow-hidden group hover:border-zinc-700 transition">
-        <div class="flex justify-between items-start">
-          <div>
-            <p class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Rata-rata Order</p>
-            <h3 id="stat-today-avg" class="text-2xl font-black text-white mt-1">Rp 0</h3>
-          </div>
-          <div class="p-2.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl">
-            <i class="fas fa-chart-line text-lg"></i>
-          </div>
-        </div>
-        <p class="text-[11px] text-zinc-500 mt-3 font-medium flex items-center">
-          <i class="fas fa-calculator text-zinc-400 mr-1.5"></i> Per Transaksi Masuk
-        </p>
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+        <p class="text-[11px] font-bold text-zinc-400 uppercase">Rata-rata Order</p>
+        <h3 id="stat-today-avg" class="text-2xl font-black text-white mt-1">Rp 0</h3>
       </div>
-
-      <!-- Card 4: Omset Bulan Berjalan -->
-      <div class="bg-zinc-900 border border-red-900/40 rounded-2xl p-5 relative overflow-hidden group hover:border-red-600/50 transition">
-        <div class="flex justify-between items-start">
-          <div>
-            <p class="text-[11px] font-bold text-red-400 uppercase tracking-wider">Omset Bulan Ini</p>
-            <h3 id="stat-month-revenue" class="text-2xl font-black text-red-500 mt-1">Rp 0</h3>
-          </div>
-          <div class="p-2.5 bg-red-600 text-white rounded-xl shadow-lg shadow-red-600/30">
-            <i class="fas fa-wallet text-lg"></i>
-          </div>
-        </div>
-        <p class="text-[11px] text-zinc-400 mt-3 font-medium flex items-center" id="stat-month-name">
-          <i class="fas fa-calendar-alt text-zinc-400 mr-1.5"></i> Periode Bulan Berjalan
-        </p>
+      <div class="bg-zinc-900 border border-red-900/40 rounded-2xl p-5">
+        <p class="text-[11px] font-bold text-red-400 uppercase">Omset Bulan Ini</p>
+        <h3 id="stat-month-revenue" class="text-2xl font-black text-red-500 mt-1">Rp 0</h3>
       </div>
-
     </div>
 
-    <!-- FILTER SECTION -->
+    <!-- FILTER DATE & MONTH -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      
-      <!-- 1. Filter Tanggal -->
       <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-3">
-        <div class="flex items-center space-x-2 border-b border-zinc-800 pb-2.5">
-          <i class="fas fa-calendar-day text-red-500"></i>
-          <h3 class="font-bold text-xs uppercase tracking-wider text-zinc-200">Cari Riwayat Tanggal Transaksi</h3>
-        </div>
+        <h3 class="font-bold text-xs uppercase text-zinc-200">Cari Riwayat Tanggal Transaksi</h3>
         <div class="flex gap-2">
-          <input type="date" id="filter-date" class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-xs text-zinc-200 focus:outline-none focus:border-red-600">
-          <button id="btn-filter-date" class="bg-red-600 hover:bg-red-700 text-white font-bold px-4 rounded-xl text-xs transition">
-            Cari Tanggal
-          </button>
+          <input type="date" id="filter-date" class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-xs text-zinc-200">
+          <button id="btn-filter-date" class="bg-red-600 hover:bg-red-700 text-white font-bold px-4 rounded-xl text-xs">Cari</button>
         </div>
-        <div id="filter-date-result" class="text-xs text-zinc-400 font-medium">
-          Klik kolom kalender di atas untuk memilih tanggal yang ingin diperiksa.
-        </div>
+        <div id="filter-date-result" class="text-xs text-zinc-400 font-medium">Pilih tanggal di atas.</div>
       </div>
 
-      <!-- 2. Filter Bulan & Tahun -->
       <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-3">
-        <div class="flex items-center space-x-2 border-b border-zinc-800 pb-2.5">
-          <i class="fas fa-calendar-alt text-amber-500"></i>
-          <h3 class="font-bold text-xs uppercase tracking-wider text-zinc-200">Cek Omset Bulan Sebelumnya</h3>
-        </div>
+        <h3 class="font-bold text-xs uppercase text-zinc-200">Cek Omset Bulan Sebelumnya</h3>
         <div class="flex gap-2">
-          <input type="month" id="filter-month" class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-xs text-zinc-200 focus:outline-none focus:border-red-600">
-          <button id="btn-filter-month" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 rounded-xl text-xs transition">
-            Lihat Omset
-          </button>
+          <input type="month" id="filter-month" class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-xs text-zinc-200">
+          <button id="btn-filter-month" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 rounded-xl text-xs">Lihat</button>
         </div>
-        <div id="filter-month-result" class="text-xs text-zinc-400 font-medium">
-          Pilih bulan & tahun di atas untuk menghitung omset bulan lampau.
-        </div>
-      </div>
-
-    </div>
-
-    <!-- GRAFIK INTERAKTIF -->
-    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-4">
-        <div>
-          <h3 class="font-bold text-sm text-white flex items-center">
-            <i class="fas fa-chart-area text-red-500 mr-2"></i> Grafik Trend Penjualan Omset
-          </h3>
-          <p class="text-xs text-zinc-400 mt-0.5">Visualisasi omset restoran Chicken Fire Mataram</p>
-        </div>
-
-        <div class="flex bg-zinc-950 p-1 rounded-xl border border-zinc-800 self-start sm:self-auto">
-          <button id="chart-btn-day" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600 text-white transition">7 Hari Terakhir</button>
-          <button id="chart-btn-week" class="px-3 py-1.5 rounded-lg text-xs font-bold text-zinc-400 hover:text-white transition">Per Pekan</button>
-          <button id="chart-btn-month" class="px-3 py-1.5 rounded-lg text-xs font-bold text-zinc-400 hover:text-white transition">Per Bulan</button>
-        </div>
-      </div>
-
-      <div class="h-72 w-full relative">
-        <canvas id="salesChart"></canvas>
+        <div id="filter-month-result" class="text-xs text-zinc-400 font-medium">Pilih bulan & tahun.</div>
       </div>
     </div>
 
-    <!-- DAFTAR TRANSAKSI TERBARU (DENGAN FITUR VOID/BATAL) -->
+    <!-- CHART -->
     <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
-      
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-4">
-        <div>
-          <h3 class="font-bold text-xs uppercase tracking-wider text-white flex items-center">
-            <i class="fas fa-list text-zinc-400 mr-2"></i> Daftar Transaksi Terbaru
-          </h3>
-          <p class="text-[11px] text-zinc-500 mt-0.5">Filter riwayat tabel berdasarkan pilihan kalender tanggal</p>
-        </div>
-
-        <div class="flex items-center space-x-2">
-          <input type="date" id="table-filter-date" class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-red-600">
-          <button id="btn-reset-table-filter" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold px-3 py-1.5 rounded-lg text-xs transition">
-            Tampilkan Semua
-          </button>
-        </div>
+      <div class="flex justify-between items-center border-b border-zinc-800 pb-4">
+        <h3 class="font-bold text-sm text-white"><i class="fas fa-chart-area text-red-500 mr-2"></i> Grafik Penjualan</h3>
       </div>
+      <div class="h-72 w-full relative"><canvas id="salesChart"></canvas></div>
+    </div>
 
+    <!-- TABLE -->
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
+      <h3 class="font-bold text-xs uppercase text-white"><i class="fas fa-list text-zinc-400 mr-2"></i> Daftar Transaksi Terbaru</h3>
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs text-zinc-300">
-          <thead class="bg-zinc-950 text-zinc-400 uppercase text-[10px] tracking-wider border-b border-zinc-800">
+          <thead class="bg-zinc-950 text-zinc-400 uppercase text-[10px] border-b border-zinc-800">
             <tr>
               <th class="p-3">Waktu</th>
               <th class="p-3">Kasir</th>
-              <th class="p-3">Customer & Request</th>
+              <th class="p-3">Customer</th>
               <th class="p-3">Meja</th>
               <th class="p-3">Metode</th>
               <th class="p-3 text-right">Total</th>
-              <th class="p-3 text-center">Status / Aksi</th>
+              <th class="p-3 text-center">Aksi</th>
             </tr>
           </thead>
           <tbody id="transaction-rows" class="divide-y divide-zinc-800/60">
-            <tr>
-              <td colspan="7" class="text-center py-6 text-zinc-500">Memuat riwayat transaksi...</td>
-            </tr>
+            <tr><td colspan="7" class="text-center py-6 text-zinc-500">Memuat data dari Neon DB...</td></tr>
           </tbody>
         </table>
       </div>
-
     </div>
 
   </main>
 
-  <!-- FOOTER MOTIVASI HARIAN -->
-  <footer class="bg-zinc-900 border-t border-zinc-800 py-4 px-6 mt-6">
-    <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-2 text-center md:text-left">
-      <div class="flex items-center space-x-2">
-        <i class="fab fa-x-twitter text-zinc-400 text-sm"></i>
-        <span class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Inspirasi Harian:</span>
-      </div>
-      <p id="daily-quote" class="text-xs text-zinc-300 italic font-medium">
-        "Kesuksesan berawal dari pelayanan yang ramah dan kualitas produk yang konsisten."
-      </p>
-      <span class="text-[10px] text-zinc-500 font-mono">Karanganyar - Jawa Tengah</span>
-    </div>
-  </footer>
-
-  <!-- SCRIPT KONEKSI FIREBASE & LOGIKA SKRIP VOID -->
   <script type="module">
-    import { db } from "./firebase-config.js";
-    import { collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { sql } from "./neon-config.js";
 
     let allOrders = [];
     let salesChartInstance = null;
 
-    const monthNames = [
-      "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-      "Juli", "Agustus", "September", "Oktober", "November", "Desember"
-    ];
-
-    const dailyQuotes = [
-      "Pelayanan tulus hari ini adalah investasi kebanggaan restoran di masa depan.",
-      "Kualitas rasa dan senyum ramah kasir adalah alasan utama pelanggan selalu kembali.",
-      "Setiap sajian yang dibuat dengan hati menghadirkan kebahagiaan bagi penikmatnya.",
-      "Kerjasama tim yang solid adalah kunci pencapaian target dan omset terbaik.",
-      "Keberhasilan usaha kuliner dibangun dari konsistensi, kebersihan, dan kejujuran.",
-      "Salam dan senyuman kasir adalah kesan indah pertama yang dirasakan customer.",
-      "Fokus pada keunggulan produk dan kepuasan pelanggan, maka sukses akan mengiringi."
-    ];
-
-    function setDailyQuote() {
-      const todayIndex = new Date().getDate() % dailyQuotes.length;
-      document.getElementById('daily-quote').innerText = `"${dailyQuotes[todayIndex]}"`;
-    }
-
     async function fetchOrders() {
       try {
-        const snap = await getDocs(collection(db, "orders"));
-        allOrders = [];
-        snap.forEach(docSnap => {
-          allOrders.push({ id: docSnap.id, ...docSnap.data() });
-        });
-
-        allOrders.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        const rows = await sql`SELECT * FROM orders ORDER BY created_at DESC`;
+        allOrders = rows;
 
         calculateStats();
         renderTable(allOrders);
-        initChart('day');
-        
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('filter-date').value = today;
+        initChart();
       } catch (err) {
-        console.error("Gagal memuat data transaksi Firestore:", err);
+        console.error("Gagal mengambil data dari Neon DB:", err);
       }
     }
 
     function calculateStats() {
       const now = new Date();
-      const todayStr = now.toDateString();
-
-      let todayRev = 0;
-      let todayCount = 0;
-      let monthRev = 0;
+      let todayRev = 0, todayCount = 0, monthRev = 0;
 
       allOrders.forEach(o => {
-        if (o.status === 'CANCELLED') return; // Abaikan transaksi batal dari total omset
+        if (o.status === 'CANCELLED') return;
+        const d = new Date(o.created_at);
+        const amt = parseFloat(o.total_amount) || 0;
 
-        const d = o.createdAt ? new Date(o.createdAt.seconds * 1000) : new Date();
-        const amt = o.totalAmount || 0;
-
-        if (d.toDateString() === todayStr) {
+        if (d.toDateString() === now.toDateString()) {
           todayRev += amt;
-          todayCount += 1;
+          todayCount++;
         }
-
         if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
           monthRev += amt;
         }
       });
 
-      const avgOrder = todayCount > 0 ? todayRev / todayCount : 0;
-
       document.getElementById('stat-today-revenue').innerText = 'Rp ' + todayRev.toLocaleString('id-ID');
       document.getElementById('stat-today-count').innerText = todayCount + ' Trx';
-      document.getElementById('stat-today-avg').innerText = 'Rp ' + Math.round(avgOrder).toLocaleString('id-ID');
+      document.getElementById('stat-today-avg').innerText = 'Rp ' + Math.round(todayCount ? todayRev/todayCount : 0).toLocaleString('id-ID');
       document.getElementById('stat-month-revenue').innerText = 'Rp ' + monthRev.toLocaleString('id-ID');
-      document.getElementById('stat-month-name').innerHTML = `<i class="fas fa-calendar-alt text-zinc-400 mr-1.5"></i> Periode: ${monthNames[now.getMonth()]} ${now.getFullYear()}`;
     }
 
     function renderTable(dataList) {
       const container = document.getElementById('transaction-rows');
       container.innerHTML = '';
 
-      if (dataList.length === 0) {
-        container.innerHTML = '<tr><td colspan="7" class="text-center py-6 text-zinc-500">Tidak ada riwayat transaksi yang ditemukan.</td></tr>';
+      if (!dataList.length) {
+        container.innerHTML = '<tr><td colspan="7" class="text-center py-6 text-zinc-500">Kosong.</td></tr>';
         return;
       }
 
       dataList.forEach(o => {
-        const dateObj = o.createdAt ? new Date(o.createdAt.seconds * 1000) : new Date();
-        const timeStr = dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-        const dateStr = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const dateObj = new Date(o.created_at);
         const isCancelled = o.status === 'CANCELLED';
 
         container.innerHTML += `
-          <tr class="hover:bg-zinc-800/40 transition ${isCancelled ? 'opacity-50 bg-red-950/10' : ''}">
-            <td class="p-3 font-mono text-[11px] text-zinc-400">${dateStr} ${timeStr}</td>
-            <td class="p-3 font-bold text-zinc-200">${o.cashierName || 'Kasir'}</td>
-            <td class="p-3 text-zinc-300">
-              <span class="font-semibold block">${o.customerName || 'Pelanggan Umum'}</span>
-              ${o.orderNotes && o.orderNotes !== '-' ? `<span class="text-[10px] text-amber-400 block"><i class="fas fa-pen-nib mr-1"></i>${o.orderNotes}</span>` : ''}
-              ${isCancelled ? `<span class="text-[10px] text-red-400 block font-bold">Alasan Batal: ${o.cancelReason || 'Customer Batal'}</span>` : ''}
-            </td>
-            <td class="p-3 text-zinc-400">${o.tableNumber || '-'}</td>
-            <td class="p-3">
-              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${o.paymentMethod === 'QRIS' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}">
-                ${o.paymentMethod || 'CASH'}
-              </span>
-            </td>
-            <td class="p-3 text-right font-black ${isCancelled ? 'line-through text-zinc-500' : 'text-red-500'}">Rp ${(o.totalAmount || 0).toLocaleString('id-ID')}</td>
+          <tr class="hover:bg-zinc-800/40 ${isCancelled ? 'opacity-50' : ''}">
+            <td class="p-3 font-mono text-[11px] text-zinc-400">${dateObj.toLocaleDateString('id-ID')} ${dateObj.toLocaleTimeString('id-ID')}</td>
+            <td class="p-3 font-bold">${o.cashier_name}</td>
+            <td class="p-3">${o.customer_name}</td>
+            <td class="p-3">${o.table_number}</td>
+            <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">${o.payment_method}</span></td>
+            <td class="p-3 text-right font-black ${isCancelled ? 'line-through text-zinc-500' : 'text-red-500'}">Rp ${parseFloat(o.total_amount).toLocaleString('id-ID')}</td>
             <td class="p-3 text-center">
-              ${isCancelled ? `
-                <span class="px-2 py-1 rounded text-[10px] font-extrabold bg-red-950 text-red-400 border border-red-800">BATAL</span>
-              ` : `
-                <button onclick="cancelOrder('${o.id}')" class="bg-zinc-800 hover:bg-red-900 text-zinc-300 hover:text-white border border-zinc-700 hover:border-red-600 px-2 py-1 rounded text-[10px] font-bold transition">
-                  <i class="fas fa-ban mr-1"></i> Batal
-                </button>
+              ${isCancelled ? '<span class="text-red-400 font-bold text-[10px]">BATAL</span>' : `
+                <button onclick="cancelOrder(${o.id})" class="bg-zinc-800 hover:bg-red-900 border border-zinc-700 px-2 py-1 rounded text-[10px] font-bold">Batal</button>
               `}
             </td>
           </tr>
@@ -383,211 +207,43 @@
       });
     }
 
-    window.cancelOrder = async (orderId) => {
-      const reason = prompt("Masukkan alasan pembatalan pesanan ini:", "Customer Batal Pesan");
-      if (reason === null) return;
+    window.cancelOrder = async (id) => {
+      const reason = prompt("Alasan pembatalan:", "Customer Batal");
+      if (!reason) return;
 
-      try {
-        await updateDoc(doc(db, "orders", orderId), {
-          status: "CANCELLED",
-          cancelReason: reason || "Dibatalkan Kasir",
-          cancelledAt: new Date()
-        });
-        alert("Transaksi berhasil dibatalkan! Total omset harian telah diperbarui.");
-        fetchOrders();
-      } catch (err) {
-        console.error("Gagal membatalkan transaksi:", err);
-        alert("Gagal membatalkan transaksi.");
-      }
+      await sql`UPDATE orders SET status = 'CANCELLED', cancel_reason = ${reason} WHERE id = ${id}`;
+      fetchOrders();
     };
 
-    // 1. CARI TANGGAL TRANSAKSI
-    document.getElementById('btn-filter-date').addEventListener('click', () => {
-      const val = document.getElementById('filter-date').value;
-      if (!val) return alert('Silakan pilih tanggal terlebih dahulu!');
-
-      const targetDate = new Date(val).toDateString();
-      let sum = 0;
-      let count = 0;
-
-      allOrders.forEach(o => {
-        if (o.status === 'CANCELLED') return;
-        const d = o.createdAt ? new Date(o.createdAt.seconds * 1000) : new Date();
-        if (d.toDateString() === targetDate) {
-          sum += (o.totalAmount || 0);
-          count++;
-        }
-      });
-
-      const formattedVal = new Date(val).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-      document.getElementById('filter-date-result').innerHTML = `
-        <div class="bg-zinc-950 p-2.5 rounded-xl border border-zinc-800 mt-2">
-          <span class="text-zinc-200 font-bold block mb-0.5">Hasil Tanggal: ${formattedVal}</span>
-          Total Omset: <span class="text-red-500 font-extrabold">Rp ${sum.toLocaleString('id-ID')}</span> 
-          <span class="text-zinc-500 ml-1">(${count} Transaksi Berhasil)</span>
-        </div>
-      `;
-    });
-
-    // 2. CARI OMSET BULAN & TAHUN
-    document.getElementById('btn-filter-month').addEventListener('click', () => {
-      const val = document.getElementById('filter-month').value;
-      if (!val) return alert('Silakan pilih bulan & tahun terlebih dahulu!');
-
-      const [year, month] = val.split('-');
-      const monthIndex = parseInt(month) - 1;
-      let sum = 0;
-      let count = 0;
-
-      allOrders.forEach(o => {
-        if (o.status === 'CANCELLED') return;
-        const d = o.createdAt ? new Date(o.createdAt.seconds * 1000) : new Date();
-        if (d.getFullYear() === parseInt(year) && d.getMonth() === monthIndex) {
-          sum += (o.totalAmount || 0);
-          count++;
-        }
-      });
-
-      document.getElementById('filter-month-result').innerHTML = `
-        <div class="bg-zinc-950 p-2.5 rounded-xl border border-zinc-800 mt-2">
-          <span class="text-zinc-200 font-bold block mb-0.5">Hasil Periode: ${monthNames[monthIndex]} ${year}</span>
-          Total Omset: <span class="text-amber-400 font-extrabold">Rp ${sum.toLocaleString('id-ID')}</span> 
-          <span class="text-zinc-500 ml-1">(${count} Transaksi Berhasil)</span>
-        </div>
-      `;
-    });
-
-    // 3. FILTER TABEL
-    document.getElementById('table-filter-date').addEventListener('change', (e) => {
-      const selectedDate = e.target.value;
-      if (!selectedDate) {
-        renderTable(allOrders);
-        return;
-      }
-
-      const targetDate = new Date(selectedDate).toDateString();
-      const filtered = allOrders.filter(o => {
-        const d = o.createdAt ? new Date(o.createdAt.seconds * 1000) : new Date();
-        return d.toDateString() === targetDate;
-      });
-
-      renderTable(filtered);
-    });
-
-    document.getElementById('btn-reset-table-filter').addEventListener('click', () => {
-      document.getElementById('table-filter-date').value = '';
-      renderTable(allOrders);
-    });
-
-    // GRAFIK CHART.JS
-    function initChart(mode) {
+    function initChart() {
       const ctx = document.getElementById('salesChart').getContext('2d');
       if (salesChartInstance) salesChartInstance.destroy();
 
-      let labels = [];
-      let dataValues = [];
+      let labels = [], dataValues = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(); d.setDate(d.getDate() - i);
+        labels.push(d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' }));
 
-      if (mode === 'day') {
-        for (let i = 6; i >= 0; i--) {
-          const d = new Date();
-          d.setDate(d.getDate() - i);
-          labels.push(d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' }));
-
-          let daySum = 0;
-          allOrders.forEach(o => {
-            if (o.status === 'CANCELLED') return;
-            const txD = o.createdAt ? new Date(o.createdAt.seconds * 1000) : new Date();
-            if (txD.toDateString() === d.toDateString()) {
-              daySum += (o.totalAmount || 0);
-            }
-          });
-          dataValues.push(daySum);
-        }
-      } else if (mode === 'week') {
-        labels = ['Pekan 1', 'Pekan 2', 'Pekan 3', 'Pekan 4'];
-        let weekSums = [0, 0, 0, 0];
-        const now = new Date();
-
+        let daySum = 0;
         allOrders.forEach(o => {
           if (o.status === 'CANCELLED') return;
-          const txD = o.createdAt ? new Date(o.createdAt.seconds * 1000) : new Date();
-          if (txD.getMonth() === now.getMonth() && txD.getFullYear() === now.getFullYear()) {
-            const dateNum = txD.getDate();
-            if (dateNum <= 7) weekSums[0] += (o.totalAmount || 0);
-            else if (dateNum <= 14) weekSums[1] += (o.totalAmount || 0);
-            else if (dateNum <= 21) weekSums[2] += (o.totalAmount || 0);
-            else weekSums[3] += (o.totalAmount || 0);
+          if (new Date(o.created_at).toDateString() === d.toDateString()) {
+            daySum += parseFloat(o.total_amount) || 0;
           }
         });
-        dataValues = weekSums;
-      } else if (mode === 'month') {
-        labels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-        dataValues = new Array(12).fill(0);
-        const currentYear = new Date().getFullYear();
-
-        allOrders.forEach(o => {
-          if (o.status === 'CANCELLED') return;
-          const txD = o.createdAt ? new Date(o.createdAt.seconds * 1000) : new Date();
-          if (txD.getFullYear() === currentYear) {
-            dataValues[txD.getMonth()] += (o.totalAmount || 0);
-          }
-        });
+        dataValues.push(daySum);
       }
 
       salesChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
           labels: labels,
-          datasets: [{
-            label: 'Omset Penjualan (Rp)',
-            data: dataValues,
-            borderColor: '#E70011',
-            backgroundColor: 'rgba(231, 0, 17, 0.15)',
-            fill: true,
-            tension: 0.35,
-            borderWidth: 3,
-            pointBackgroundColor: '#E70011',
-            pointRadius: 4,
-            pointHoverRadius: 6
-          }]
+          datasets: [{ label: 'Omset', data: dataValues, borderColor: '#E70011', backgroundColor: 'rgba(231,0,17,0.15)', fill: true }]
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false }
-          },
-          scales: {
-            x: {
-              grid: { color: 'rgba(255, 255, 255, 0.05)' },
-              ticks: { color: '#a1a1aa', font: { size: 11 } }
-            },
-            y: {
-              grid: { color: 'rgba(255, 255, 255, 0.05)' },
-              ticks: { 
-                color: '#a1a1aa', 
-                font: { size: 11 },
-                callback: (val) => 'Rp ' + val.toLocaleString('id-ID')
-              }
-            }
-          }
-        }
+        options: { responsive: true, maintainAspectRatio: false }
       });
     }
 
-    document.getElementById('chart-btn-day').addEventListener('click', (e) => setChartMode(e.target, 'day'));
-    document.getElementById('chart-btn-week').addEventListener('click', (e) => setChartMode(e.target, 'week'));
-    document.getElementById('chart-btn-month').addEventListener('click', (e) => setChartMode(e.target, 'month'));
-
-    function setChartMode(btn, mode) {
-      document.querySelectorAll('#chart-btn-day, #chart-btn-week, #chart-btn-month').forEach(b => {
-        b.className = "px-3 py-1.5 rounded-lg text-xs font-bold text-zinc-400 hover:text-white transition";
-      });
-      btn.className = "px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600 text-white transition";
-      initChart(mode);
-    }
-
-    setDailyQuote();
     fetchOrders();
   </script>
 </body>
