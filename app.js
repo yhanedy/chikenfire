@@ -12,7 +12,7 @@ let currentCategory = "semua";
 let activeCashierName = "";
 let adminMasterPassword = "1234";
 
-// KONFIGURASI PRINTER DEFAULT (SAVED IN LOCALSTORAGE)
+// KONFIGURASI PRINTER DEFAULT (TERSIMPAN DI LOCALSTORAGE)
 let printerConfig = JSON.parse(localStorage.getItem('cfm_printer_cfg')) || {
   storeName: "CHICKEN FIRE MATARAM",
   storePhone: "0812-3456-7890",
@@ -65,15 +65,20 @@ document.getElementById('save-printer-settings-btn').addEventListener('click', (
 // 2. TES PRINTER
 window.testPrint = (type) => {
   const dummyCart = [
-    { name: "Ayam Fire Level 3", qty: 2, finalPrice: 20000, discAmount: 0, itemNote: "Ekstra Pedas" },
-    { name: "Es Teh Manis", qty: 2, finalPrice: 5000, discAmount: 0, itemNote: "Manis Sedang" }
+    { name: "Ayam Fire Level 3", qty: 2, finalPrice: 20000, discAmount: 0, itemNote: "Ekstra Pedas", category: "makanan" },
+    { name: "Es Teh Manis", qty: 2, finalPrice: 5000, discAmount: 0, itemNote: "Manis Sedang", category: "minuman" }
   ];
   executePrint(type, "TES PRINTER", "Pelanggan Tes", "Meja 01", dummyCart, 50000, 50000, 0, "CASH");
 };
 
-// 3. LOGIN & KASIR SYSTEM
+// 3. AUTENTIKASI LOGIN + FULLSCREEN
 document.getElementById('login-form').addEventListener('submit', async (e) => {
   e.preventDefault();
+
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  }
+
   const role = document.getElementById('login-role').value;
   const u = document.getElementById('login-user').value.trim();
   const p = document.getElementById('login-pass').value.trim();
@@ -120,7 +125,7 @@ document.getElementById('logout-btn').addEventListener('click', () => {
   renderCart();
 });
 
-// KELOLA KASIR SISWA
+// 4. KELOLA KASIR SISWA
 document.getElementById('add-cashier-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const name = document.getElementById('cashier-name-input').value.trim();
@@ -159,7 +164,18 @@ window.removeCashier = async (id) => {
   }
 };
 
-// UPLOAD MENU & KOMPRESI GAMBAR
+// 5. GANTI PASSWORD ADMIN
+document.getElementById('change-admin-pass-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const newPass = document.getElementById('new-admin-pass').value.trim();
+  if(newPass) {
+    adminMasterPassword = newPass;
+    alert("Password Admin diperbarui!");
+    document.getElementById('change-admin-pass-form').reset();
+  }
+});
+
+// 6. UPLOAD MENU & KOMPRESI GAMBAR OTOMATIS
 document.getElementById('add-product-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = document.getElementById('save-product-btn');
@@ -236,7 +252,7 @@ window.deleteProduct = async (id) => {
   }
 };
 
-// KATALOG & KERANJANG KASIR
+// 7. KATALOG & KERANJANG KASIR
 async function loadProducts() {
   const grid = document.getElementById('product-grid');
   if(!grid) return;
@@ -276,6 +292,17 @@ function renderProducts() {
     });
   });
 }
+
+document.querySelectorAll('#cat-tabs button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#cat-tabs button').forEach(b => {
+      b.className = "cat-btn bg-zinc-900 text-zinc-400 border border-zinc-800 font-bold px-3 py-1 rounded-lg text-xs hover:bg-zinc-800 transition";
+    });
+    btn.className = "cat-btn bg-red-600 text-white font-bold px-3 py-1 rounded-lg text-xs shadow transition";
+    currentCategory = btn.dataset.cat;
+    renderProducts();
+  });
+});
 
 function addToCart(prod) {
   let finalPrice = prod.price;
@@ -330,6 +357,8 @@ function renderCart() {
 window.updateItemNote = (idx, val) => { if (cart[idx]) cart[idx].itemNote = val.trim(); };
 function updateQty(idx, change) { cart[idx].qty += change; if(cart[idx].qty <= 0) cart.splice(idx, 1); renderCart(); }
 
+document.getElementById('clear-cart-btn').addEventListener('click', () => { cart = []; renderCart(); });
+
 document.getElementById('btn-pay-cash').addEventListener('click', () => setPaymentMethod('CASH'));
 document.getElementById('btn-pay-qris').addEventListener('click', () => setPaymentMethod('QRIS'));
 
@@ -347,7 +376,7 @@ function calcChange() {
   document.getElementById('change-amount').innerText = 'Rp ' + (change > 0 ? change.toLocaleString('id-ID') : '0');
 }
 
-// 4. SIMPAN TRANSAKSI & CETAK STRUK KE THERMAL PRINTER
+// 8. SIMPAN TRANSAKSI KE NEON DB & CETAK STRUK THERMAL
 document.getElementById('process-order-btn').addEventListener('click', async () => {
   if(cart.length === 0) return alert('Pilih pesanan terlebih dahulu!');
 
@@ -376,7 +405,7 @@ document.getElementById('process-order-btn').addEventListener('click', async () 
     lastSavedCustomer = customerName;
     lastSavedTable = tableNumber;
 
-    // CETAK DIRECT STRUK CUSTOMER DENGAN PENGATURAN THERMAL
+    // Direct cetak thermal
     executePrint('customer', newOrder.id, customerName, tableNumber, lastSavedCart, total, pay, pay - total, currentPayMethod);
 
     cart = [];
@@ -404,7 +433,7 @@ document.getElementById('print-drink-btn').addEventListener('click', () => {
   executePrint('drink', "SLIP BAR", cust, tbl, items, 0, 0, 0, currentPayMethod);
 });
 
-// FUNGSI EKSEKUSI CETAK THERMAL PRINTER (TETAP RAPI DI KERTAS 58MM/80MM)
+// FUNGSI EKSEKUSI CETAK THERMAL PRINTER (58MM / 80MM)
 function executePrint(type, orderId, customer, table, itemsList, total, pay, change, payMethod) {
   const container = document.getElementById('printable-receipt');
   if(!container) return;
@@ -473,7 +502,7 @@ function executePrint(type, orderId, customer, table, itemsList, total, pay, cha
     </div>
   `;
 
-  // TRIGGER PERINTAH CETAK PRINTER TABLET
+  // Trigger dialog print sistem/bluetooth browser
   window.print();
 }
 
