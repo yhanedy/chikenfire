@@ -12,9 +12,15 @@ let currentCategory = "semua";
 let activeCashierName = "";
 let adminMasterPassword = "1234";
 
-// 1. AUTENTIKASI LOGIN
+// 1. AUTENTIKASI LOGIN + FULLSCREEN AUTO
 document.getElementById('login-form').addEventListener('submit', async (e) => {
   e.preventDefault();
+
+  // Aktifkan mode Fullscreen di tablet saat menekan tombol login
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  }
+
   const role = document.getElementById('login-role').value;
   const u = document.getElementById('login-user').value.trim();
   const p = document.getElementById('login-pass').value.trim();
@@ -61,71 +67,7 @@ document.getElementById('logout-btn').addEventListener('click', () => {
   renderCart();
 });
 
-// UPLOAD MENU BARU DENGAN KONVERSI BASE64 (TANPA BERGANTUNG PADA API EXTERNAL)
-document.getElementById('add-product-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const btn = document.getElementById('save-product-btn');
-  btn.innerText = "Memproses Gambar...";
-  btn.disabled = true;
-
-  try {
-    const name = document.getElementById('prod-name').value.trim();
-    const category = document.getElementById('prod-category').value;
-    const price = parseFloat(document.getElementById('prod-price').value) || 0;
-    const discountType = document.getElementById('prod-discount-type').value;
-    const discountValue = parseFloat(document.getElementById('prod-discount-value').value) || 0;
-    const fileInput = document.getElementById('prod-image-file');
-    const file = fileInput.files[0];
-
-    if (!file) {
-      alert("Silakan pilih file foto menu terlebih dahulu!");
-      btn.innerText = "Simpan & Upload Menu";
-      btn.disabled = false;
-      return;
-    }
-
-    // Konversi foto langsung ke Base64 Data URL agar 100% sesuai dengan file yang diunggah
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = async () => {
-      const imageUrl = reader.result; // Teks gambar asli yang diunggah
-
-      btn.innerText = "Menyimpan ke Neon DB...";
-
-      try {
-        await sql`
-          INSERT INTO products (name, category, price, discount_type, discount_value, image_url)
-          VALUES (${name}, ${category}, ${price}, ${discountType}, ${discountValue}, ${imageUrl})
-        `;
-
-        alert("Menu dan foto asli berhasil disimpan ke Neon DB!");
-        document.getElementById('add-product-form').reset();
-        loadAdminProducts();
-      } catch (dbErr) {
-        console.error("Gagal simpan ke DB:", dbErr);
-        alert("Gagal menyimpan data menu ke database.");
-      } finally {
-        btn.innerText = "Simpan & Upload Menu";
-        btn.disabled = false;
-      }
-    };
-
-    reader.onerror = (error) => {
-      console.error("Gagal membaca file gambar:", error);
-      alert("Gagal membaca file gambar yang dipilih.");
-      btn.innerText = "Simpan & Upload Menu";
-      btn.disabled = false;
-    };
-
-  } catch (err) {
-    console.error("Error Simpan Menu:", err);
-    alert("Terjadi kesalahan sistem saat memproses menu.");
-    btn.innerText = "Simpan & Upload Menu";
-    btn.disabled = false;
-  }
-});
-
-// 2. KELOLA KASIR SISWA (NEON SQL)
+// 2. KELOLA KASIR SISWA
 document.getElementById('add-cashier-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const name = document.getElementById('cashier-name-input').value.trim();
@@ -137,12 +79,11 @@ document.getElementById('add-cashier-form').addEventListener('submit', async (e)
       INSERT INTO cashiers (name, username, password)
       VALUES (${name}, ${username}, ${password})
     `;
-    alert("Akun kasir siswa berhasil ditambahkan ke Neon DB!");
+    alert("Akun kasir siswa berhasil ditambahkan!");
     document.getElementById('add-cashier-form').reset();
     loadCashiers();
   } catch (err) {
-    console.error("Gagal menambah akun kasir:", err);
-    alert("Gagal menambah akun kasir. Username mungkin sudah terpakai.");
+    alert("Username kasir sudah digunakan!");
   }
 });
 
@@ -157,17 +98,17 @@ async function loadCashiers() {
     allCashiers = rows;
     rows.forEach((c) => {
       container.innerHTML += `
-        <div class="flex justify-between items-center bg-zinc-950 border border-zinc-800 p-2 rounded-lg text-xs">
+        <div class="flex justify-between items-center bg-zinc-950 border border-zinc-800 p-1.5 rounded text-xs">
           <div>
             <span class="font-bold text-zinc-200">${c.name}</span>
-            <span class="text-[10px] text-zinc-500 block">User: ${c.username} | Pass: ${c.password}</span>
+            <span class="text-[9px] text-zinc-500 block">User: ${c.username}</span>
           </div>
-          <button onclick="removeCashier(${c.id})" class="bg-red-950 text-red-400 border border-red-800 px-2 py-1 rounded font-bold hover:bg-red-900 text-[10px]">Hapus</button>
+          <button onclick="removeCashier(${c.id})" class="bg-red-950 text-red-400 border border-red-800 px-2 py-0.5 rounded font-bold text-[9px]">Hapus</button>
         </div>
       `;
     });
   } catch (err) {
-    console.error("Gagal memuat data kasir:", err);
+    console.error(err);
   }
 }
 
@@ -184,20 +125,20 @@ document.getElementById('change-admin-pass-form').addEventListener('submit', (e)
   const newPass = document.getElementById('new-admin-pass').value.trim();
   if(newPass) {
     adminMasterPassword = newPass;
-    alert("Password Admin berhasil diperbarui!");
+    alert("Password Admin diperbarui!");
     document.getElementById('change-admin-pass-form').reset();
   }
 });
 
-// 4. UPLOAD MENU BARU (NEON SQL)
+// 4. UPLOAD FOTO & TAMBAH MENU (KOMPRESI GAMBAR OTOMATIS DENGAN CANVAS)
 document.getElementById('add-product-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = document.getElementById('save-product-btn');
-  btn.innerText = "Menyimpan...";
+  btn.innerText = "Memproses Gambar...";
   btn.disabled = true;
 
   try {
-    const name = document.getElementById('prod-name').value;
+    const name = document.getElementById('prod-name').value.trim();
     const category = document.getElementById('prod-category').value;
     const price = parseFloat(document.getElementById('prod-price').value) || 0;
     const discountType = document.getElementById('prod-discount-type').value;
@@ -208,24 +149,8 @@ document.getElementById('add-product-form').addEventListener('submit', async (e)
     let imageUrl = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300";
 
     if (file) {
-      btn.innerText = "Mengunggah Foto...";
-      try {
-        const formData = new FormData();
-        formData.append("image", file);
-
-        const imgurResponse = await fetch("https://api.imgur.com/3/image", {
-          method: "POST",
-          headers: { Authorization: "Client-ID c982d61d56223b2" },
-          body: formData
-        });
-
-        const imgurData = await imgurResponse.json();
-        if (imgurData.success && imgurData.data && imgurData.data.link) {
-          imageUrl = imgurData.data.link;
-        }
-      } catch (imgErr) {
-        console.warn("Upload gambar eksternal gagal, memakai gambar bawaan:", imgErr);
-      }
+      // Kompres foto agar ukurannya pas dan ringan di database Neon
+      imageUrl = await compressAndReadImage(file);
     }
 
     btn.innerText = "Menyimpan ke Neon DB...";
@@ -235,18 +160,44 @@ document.getElementById('add-product-form').addEventListener('submit', async (e)
       VALUES (${name}, ${category}, ${price}, ${discountType}, ${discountValue}, ${imageUrl})
     `;
 
-    alert("Menu berhasil ditambahkan ke Neon PostgreSQL!");
+    alert("Menu dan Foto berhasil disimpan!");
     document.getElementById('add-product-form').reset();
     loadAdminProducts();
 
   } catch (err) {
     console.error("Error Simpan Menu:", err);
-    alert("Terjadi kesalahan saat menyimpan menu.");
+    alert("Gagal menyimpan data menu.");
   } finally {
     btn.innerText = "Simpan & Upload Menu";
     btn.disabled = false;
   }
 });
+
+// Fungsi pembantu untuk kompresi foto lokal
+function compressAndReadImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxWidth = 300;
+        const scaleSize = maxWidth / img.width;
+        canvas.width = maxWidth;
+        canvas.height = img.height * scaleSize;
+
+        const ctx = canvas.getContext('canvas-2d') || canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        // Output format JPEG dengan kualitas 70%
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
+      };
+    };
+    reader.onerror = error => reject(error);
+  });
+}
 
 async function loadAdminProducts() {
   const container = document.getElementById('admin-menu-list');
@@ -260,22 +211,20 @@ async function loadAdminProducts() {
       let discTag = p.discount_type === 'percent' ? `${p.discount_value}% OFF` : p.discount_type === 'nominal' ? `Pot. Rp ${parseFloat(p.discount_value).toLocaleString('id-ID')}` : '';
       
       container.innerHTML += `
-        <div class="flex items-center justify-between border border-zinc-800 p-2 rounded-lg bg-zinc-950 text-xs">
+        <div class="flex items-center justify-between border border-zinc-800 p-2 rounded bg-zinc-950 text-xs">
           <div class="flex items-center space-x-2">
-            <img src="${p.image_url}" class="w-10 h-10 object-cover rounded-md" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300'">
+            <img src="${p.image_url}" class="w-10 h-10 object-cover rounded" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300'">
             <div>
               <h5 class="font-bold text-zinc-200">${p.name}</h5>
               <p class="text-zinc-400 text-[10px]">Rp ${parseFloat(p.price).toLocaleString('id-ID')} ${discTag ? `<span class="text-red-500 font-bold ml-1">(${discTag})</span>` : ''}</p>
             </div>
           </div>
-          <button onclick="deleteProduct(${p.id})" class="bg-red-950 text-red-400 border border-red-800 px-2.5 py-1 rounded text-[10px] font-bold hover:bg-red-900">
-            <i class="fas fa-trash-alt mr-1"></i> Delete
-          </button>
+          <button onclick="deleteProduct(${p.id})" class="bg-red-950 text-red-400 border border-red-800 px-2 py-1 rounded text-[10px] font-bold">Delete</button>
         </div>
       `;
     });
   } catch(err) {
-    container.innerHTML = '<p class="text-xs text-red-500 text-center">Gagal memuat menu dari Neon DB.</p>';
+    container.innerHTML = '<p class="text-xs text-red-500 text-center">Gagal memuat menu.</p>';
   }
 }
 
@@ -286,7 +235,7 @@ window.deleteProduct = async (id) => {
   }
 };
 
-// 5. KATALOG KASIR (NEON SQL)
+// 5. KATALOG KASIR
 async function loadProducts() {
   const grid = document.getElementById('product-grid');
   if(!grid) return;
@@ -305,7 +254,7 @@ async function loadProducts() {
     }));
     renderProducts();
   } catch (err) {
-    grid.innerHTML = '<p class="text-xs text-red-500 col-span-4 text-center py-10">Gagal memuat produk dari Neon DB!</p>';
+    grid.innerHTML = '<p class="text-xs text-red-500 col-span-4 text-center py-10">Gagal memuat produk!</p>';
   }
 }
 
@@ -333,15 +282,15 @@ function renderProducts() {
 
     grid.innerHTML += `
       <div class="product-card bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-sm hover:border-red-600 cursor-pointer transition relative group" data-id="${p.id}">
-        ${hasDiscount ? `<span class="absolute top-1.5 right-1.5 bg-red-600 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded shadow">PROMO</span>` : ''}
-        <img src="${p.imageUrl}" class="w-full h-24 object-cover group-hover:scale-105 transition duration-200" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300'">
-        <div class="p-2.5">
-          <h4 class="font-bold text-zinc-100 text-xs truncate">${p.name}</h4>
+        ${hasDiscount ? `<span class="absolute top-1 right-1 bg-red-600 text-white text-[8px] font-extrabold px-1 rounded">PROMO</span>` : ''}
+        <img src="${p.imageUrl}" class="w-full h-20 object-cover group-hover:scale-105 transition duration-200" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300'">
+        <div class="p-2">
+          <h4 class="font-bold text-zinc-100 text-[11px] truncate">${p.name}</h4>
           ${hasDiscount ? `
-            <p class="text-zinc-500 line-through text-[10px]">Rp ${p.price.toLocaleString('id-ID')}</p>
-            <p class="text-red-500 font-black text-xs">Rp ${finalPrice.toLocaleString('id-ID')}</p>
+            <p class="text-zinc-500 line-through text-[9px]">Rp ${p.price.toLocaleString('id-ID')}</p>
+            <p class="text-red-500 font-black text-[11px]">Rp ${finalPrice.toLocaleString('id-ID')}</p>
           ` : `
-            <p class="text-red-500 font-black text-xs">Rp ${p.price.toLocaleString('id-ID')}</p>
+            <p class="text-red-500 font-black text-[11px]">Rp ${p.price.toLocaleString('id-ID')}</p>
           `}
         </div>
       </div>
@@ -359,9 +308,9 @@ function renderProducts() {
 document.querySelectorAll('#cat-tabs button').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('#cat-tabs button').forEach(b => {
-      b.className = "cat-btn bg-zinc-900 text-zinc-400 border border-zinc-800 font-bold px-3.5 py-1.5 rounded-lg text-xs hover:bg-zinc-800 transition";
+      b.className = "cat-btn bg-zinc-900 text-zinc-400 border border-zinc-800 font-bold px-3 py-1 rounded-lg text-xs hover:bg-zinc-800 transition";
     });
-    btn.className = "cat-btn bg-red-600 text-white font-bold px-3.5 py-1.5 rounded-lg text-xs shadow transition";
+    btn.className = "cat-btn bg-red-600 text-white font-bold px-3 py-1 rounded-lg text-xs shadow transition";
     currentCategory = btn.dataset.cat;
     renderProducts();
   });
@@ -396,7 +345,7 @@ function renderCart() {
   let total = 0;
 
   if(cart.length === 0) {
-    container.innerHTML = '<p class="text-xs text-zinc-500 text-center py-8">Keranjang belanja kosong</p>';
+    container.innerHTML = '<p class="text-xs text-zinc-500 text-center py-6">Keranjang kosong</p>';
     document.getElementById('cart-total').innerText = 'Rp 0';
     calcChange();
     return;
@@ -407,31 +356,30 @@ function renderCart() {
     total += subtotal;
 
     container.innerHTML += `
-      <div class="bg-zinc-950 border border-zinc-800 p-2.5 rounded-xl space-y-2 text-xs">
+      <div class="bg-zinc-950 border border-zinc-800 p-2 rounded-lg space-y-1.5 text-xs">
         <div class="flex items-center justify-between">
           <div class="w-1/2">
-            <div class="font-bold text-zinc-100 truncate">${item.name}</div>
-            <div class="text-zinc-400 text-[10px]">
+            <div class="font-bold text-zinc-100 truncate text-[11px]">${item.name}</div>
+            <div class="text-zinc-400 text-[9px]">
               Rp ${item.finalPrice.toLocaleString('id-ID')}
-              ${item.discAmount > 0 ? `<span class="text-red-400 font-bold ml-1">(Disc Rp ${item.discAmount.toLocaleString('id-ID')})</span>` : ''}
             </div>
           </div>
 
-          <div class="font-black text-red-500 w-20 text-right">
+          <div class="font-black text-red-500 w-20 text-right text-[11px]">
             Rp ${subtotal.toLocaleString('id-ID')}
           </div>
         </div>
 
-        <div class="flex items-center space-x-2 pt-1 border-t border-zinc-900">
-          <div class="flex items-center space-x-1.5 bg-zinc-900 border border-zinc-800 p-1 rounded-lg flex-shrink-0">
-            <button class="btn-minus w-5 h-5 bg-zinc-800 hover:bg-zinc-700 text-red-400 font-bold rounded flex items-center justify-center transition" data-index="${index}">-</button>
-            <span class="font-black text-white w-5 text-center text-xs">${item.qty}</span>
-            <button class="btn-plus w-5 h-5 bg-red-600 hover:bg-red-700 text-white font-bold rounded flex items-center justify-center transition" data-index="${index}">+</button>
+        <div class="flex items-center space-x-1.5 pt-1 border-t border-zinc-900">
+          <div class="flex items-center space-x-1 bg-zinc-900 border border-zinc-800 p-0.5 rounded flex-shrink-0">
+            <button class="btn-minus w-4 h-4 bg-zinc-800 text-red-400 font-bold rounded flex items-center justify-center" data-index="${index}">-</button>
+            <span class="font-black text-white w-4 text-center text-[10px]">${item.qty}</span>
+            <button class="btn-plus w-4 h-4 bg-red-600 text-white font-bold rounded flex items-center justify-center" data-index="${index}">+</button>
           </div>
 
-          <input type="text" placeholder="Catatan (Cth: Tanpa gula)..." value="${item.itemNote || ''}" 
+          <input type="text" placeholder="Catatan..." value="${item.itemNote || ''}" 
             onchange="updateItemNote(${index}, this.value)" 
-            class="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1 text-[11px] text-amber-200 placeholder-zinc-600 focus:outline-none focus:border-amber-500">
+            class="flex-1 bg-zinc-900 border border-zinc-800 rounded px-1.5 py-0.5 text-[10px] text-amber-200 placeholder-zinc-600 focus:outline-none">
         </div>
       </div>
     `;
@@ -444,9 +392,7 @@ function renderCart() {
 }
 
 window.updateItemNote = (idx, val) => {
-  if (cart[idx]) {
-    cart[idx].itemNote = val.trim();
-  }
+  if (cart[idx]) cart[idx].itemNote = val.trim();
 };
 
 function updateQty(idx, change) {
@@ -469,11 +415,11 @@ function setPaymentMethod(m) {
   const btnQ = document.getElementById('btn-pay-qris');
 
   if(m === 'CASH') {
-    btnC.className = "py-2 rounded-lg border text-xs font-bold border-red-600 bg-red-600 text-white transition";
-    btnQ.className = "py-2 rounded-lg border text-xs font-bold border-zinc-800 bg-zinc-900 text-zinc-400 hover:bg-zinc-800 transition";
+    btnC.className = "py-1 rounded border text-xs font-bold border-red-600 bg-red-600 text-white";
+    btnQ.className = "py-1 rounded border text-xs font-bold border-zinc-800 bg-zinc-900 text-zinc-400";
   } else {
-    btnQ.className = "py-2 rounded-lg border text-xs font-bold border-blue-600 bg-blue-600 text-white transition";
-    btnC.className = "py-2 rounded-lg border text-xs font-bold border-zinc-800 bg-zinc-900 text-zinc-400 hover:bg-zinc-800 transition";
+    btnQ.className = "py-1 rounded border text-xs font-bold border-blue-600 bg-blue-600 text-white";
+    btnC.className = "py-1 rounded border text-xs font-bold border-zinc-800 bg-zinc-900 text-zinc-400";
   }
 }
 
@@ -486,7 +432,7 @@ function calcChange() {
   document.getElementById('change-amount').innerText = 'Rp ' + (change > 0 ? change.toLocaleString('id-ID') : '0');
 }
 
-// 7. SIMPAN TRANSAKSI KE NEON DB (ORDERS & ORDER_ITEMS)
+// 7. SIMPAN TRANSAKSI KE NEON DB
 document.getElementById('process-order-btn').addEventListener('click', async () => {
   if(cart.length === 0) return alert('Pilih pesanan terlebih dahulu!');
 
@@ -498,14 +444,12 @@ document.getElementById('process-order-btn').addEventListener('click', async () 
   const tableNumber = document.getElementById('table-no').value || "-";
 
   try {
-    // 1. Simpan ke Tabel Orders
     const [newOrder] = await sql`
       INSERT INTO orders (cashier_name, customer_name, table_number, payment_method, status, total_amount, paid_amount, change_amount)
       VALUES (${activeCashierName || "Kasir Siswa"}, ${customerName}, ${tableNumber}, ${currentPayMethod}, 'COMPLETED', ${total}, ${pay}, ${pay - total})
       RETURNING id
     `;
 
-    // 2. Simpan Detail Item ke Tabel Order_Items
     for (const item of cart) {
       await sql`
         INSERT INTO order_items (order_id, product_name, qty, price, discount_amount, item_note)
@@ -518,14 +462,14 @@ document.getElementById('process-order-btn').addEventListener('click', async () 
     lastSavedTable = tableNumber;
 
     printReceipt('kasir', activeCashierName || "Kasir Siswa");
-    alert(`Transaksi Berhasil Disimpan ke Neon PostgreSQL!`);
+    alert(`Transaksi Berhasil Disimpan!`);
     
     cart = [];
     document.getElementById('pay-amount').value = '';
     renderCart();
   } catch (err) {
-    console.error("Gagal simpan transaksi ke Neon:", err);
-    alert("Terjadi kesalahan saat menyimpan transaksi ke database.");
+    console.error(err);
+    alert("Gagal menyimpan transaksi ke Neon DB.");
   }
 });
 
@@ -544,9 +488,9 @@ function printReceipt(type, cashier) {
   if(type === 'kitchen') itemsToPrint = itemsToPrint.filter(i => i.category === 'makanan' || i.category === 'paket');
   if(type === 'drink') itemsToPrint = itemsToPrint.filter(i => i.category === 'minuman' || i.category === 'paket');
 
-  if(itemsToPrint.length === 0) return alert(`Tidak ada menu kategori ${type === 'kitchen' ? 'makanan' : 'minuman'} pada pesanan ini.`);
+  if(itemsToPrint.length === 0) return alert(`Tidak ada menu kategori ${type === 'kitchen' ? 'makanan' : 'minuman'}.`);
 
-  let printText = `${receiptTitle}\nCHICKEN FIRE MATARAM\nAlamat: Karanganyar - Jawa Tengah\nKasir: ${cashier}\nCustomer: ${customer}\nMeja: ${table}\nMetode: ${currentPayMethod}\n--------------------------------\n`;
+  let printText = `${receiptTitle}\nCHICKEN FIRE MATARAM\nKasir: ${cashier}\nCustomer: ${customer}\nMeja: ${table}\n--------------------------------\n`;
 
   itemsToPrint.forEach(i => {
     printText += `${i.name} x${i.qty} = Rp ${(i.finalPrice * i.qty).toLocaleString('id-ID')}\n`;
@@ -554,7 +498,7 @@ function printReceipt(type, cashier) {
       printText += `   *Req: ${i.itemNote}\n`;
     }
   });
-  printText += `--------------------------------\nTerima Kasih Atas Kunjungan Anda!\nNikmati Pedasnya Chicken Fire!`;
+  printText += `--------------------------------\nTerima Kasih!`;
 
   alert(printText);
 }
