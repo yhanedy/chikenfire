@@ -61,6 +61,70 @@ document.getElementById('logout-btn').addEventListener('click', () => {
   renderCart();
 });
 
+// UPLOAD MENU BARU DENGAN KONVERSI BASE64 (TANPA BERGANTUNG PADA API EXTERNAL)
+document.getElementById('add-product-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('save-product-btn');
+  btn.innerText = "Memproses Gambar...";
+  btn.disabled = true;
+
+  try {
+    const name = document.getElementById('prod-name').value.trim();
+    const category = document.getElementById('prod-category').value;
+    const price = parseFloat(document.getElementById('prod-price').value) || 0;
+    const discountType = document.getElementById('prod-discount-type').value;
+    const discountValue = parseFloat(document.getElementById('prod-discount-value').value) || 0;
+    const fileInput = document.getElementById('prod-image-file');
+    const file = fileInput.files[0];
+
+    if (!file) {
+      alert("Silakan pilih file foto menu terlebih dahulu!");
+      btn.innerText = "Simpan & Upload Menu";
+      btn.disabled = false;
+      return;
+    }
+
+    // Konversi foto langsung ke Base64 Data URL agar 100% sesuai dengan file yang diunggah
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = async () => {
+      const imageUrl = reader.result; // Teks gambar asli yang diunggah
+
+      btn.innerText = "Menyimpan ke Neon DB...";
+
+      try {
+        await sql`
+          INSERT INTO products (name, category, price, discount_type, discount_value, image_url)
+          VALUES (${name}, ${category}, ${price}, ${discountType}, ${discountValue}, ${imageUrl})
+        `;
+
+        alert("Menu dan foto asli berhasil disimpan ke Neon DB!");
+        document.getElementById('add-product-form').reset();
+        loadAdminProducts();
+      } catch (dbErr) {
+        console.error("Gagal simpan ke DB:", dbErr);
+        alert("Gagal menyimpan data menu ke database.");
+      } finally {
+        btn.innerText = "Simpan & Upload Menu";
+        btn.disabled = false;
+      }
+    };
+
+    reader.onerror = (error) => {
+      console.error("Gagal membaca file gambar:", error);
+      alert("Gagal membaca file gambar yang dipilih.");
+      btn.innerText = "Simpan & Upload Menu";
+      btn.disabled = false;
+    };
+
+  } catch (err) {
+    console.error("Error Simpan Menu:", err);
+    alert("Terjadi kesalahan sistem saat memproses menu.");
+    btn.innerText = "Simpan & Upload Menu";
+    btn.disabled = false;
+  }
+});
+
 // 2. KELOLA KASIR SISWA (NEON SQL)
 document.getElementById('add-cashier-form').addEventListener('submit', async (e) => {
   e.preventDefault();
