@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="id" class="dark h-full bg-zinc-950">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chicken Fire Mataram - POS & Printer System</title>
+  <title>Chicken Fire Mataram - POS & Direct Bluetooth Thermal</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -37,28 +38,11 @@
     ::-webkit-scrollbar-track { background: #09090b; }
     ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
-
-    /* CSS Khusus Direct Thermal Printing Struk (58mm / 80mm) */
-    @media print {
-      body * { visibility: hidden; }
-      #printable-receipt, #printable-receipt * { visibility: visible; }
-      #printable-receipt {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        margin: 0;
-        padding: 0;
-        font-family: 'Courier New', Courier, monospace;
-        color: #000;
-      }
-      @page { margin: 0; }
-    }
   </style>
 </head>
 <body class="bg-zinc-950 text-zinc-100 font-sans min-h-screen h-full flex flex-col overflow-hidden antialiased selection:bg-red-500 selection:text-white">
 
-  <!-- MODAL LOGIN AWAL DENGAN BACKGROUND KUSTOM & EFEK MODERN -->
+  <!-- MODAL LOGIN AWAL -->
   <div id="login-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-50 p-4">
     <div class="relative bg-zinc-900 border border-zinc-800/80 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden group">
       
@@ -216,10 +200,10 @@
     </div>
   </div>
 
-  <!-- PANEL KASIR (TATA LETAK COMPACT KETAT TABLET) -->
+  <!-- PANEL KASIR -->
   <div id="kasir-view" class="flex flex-1 overflow-hidden">
     
-    <!-- KATALOG PRODUK (KIRI) -->
+    <!-- KATALOG PRODUK -->
     <div class="w-7/12 md:w-8/12 p-3 flex flex-col h-full bg-zinc-950 border-r border-zinc-800">
       <div class="flex space-x-1.5 border-b border-zinc-800 mb-2.5 pb-2" id="cat-tabs">
         <button data-cat="semua" class="cat-btn bg-red-600 text-white font-bold px-3 py-1 rounded-lg text-xs">Semua</button>
@@ -233,7 +217,7 @@
       </div>
     </div>
 
-    <!-- PANEL TRANSAKSI KASIR (KANAN) -->
+    <!-- PANEL TRANSAKSI KASIR -->
     <div class="w-5/12 md:w-4/12 bg-zinc-900 flex flex-col h-full justify-between border-l border-zinc-800 overflow-hidden">
       
       <!-- Customer & Meja Info -->
@@ -302,11 +286,11 @@
     </div>
   </div>
 
-  <!-- MODAL PENGATURAN PRINTER DAN STRUK -->
+  <!-- MODAL PENGATURAN PRINTER DAN STRUK (DIKUNCI KE RAWBT BLUETOOTH) -->
   <div id="printer-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 hidden">
     <div class="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
       <div class="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
-        <h3 class="text-sm font-bold text-white flex items-center"><i class="fas fa-print text-amber-500 mr-2"></i> Pengaturan Printer & Struk Thermal</h3>
+        <h3 class="text-sm font-bold text-white flex items-center"><i class="fas fa-print text-amber-500 mr-2"></i> Pengaturan Printer Thermal Bluetooth</h3>
         <button id="close-printer-modal-btn" class="text-zinc-400 hover:text-white text-base"><i class="fas fa-times"></i></button>
       </div>
 
@@ -331,7 +315,7 @@
           </div>
           <div>
             <label class="text-[10px] font-bold text-zinc-400 block mb-1">Pesan Footer Struk</label>
-            <input type="text" id="cfg-store-footer" value="Terima Kasih Atas Kunjungan Anda! Nikmati Pedasnya Chicken Fire!" class="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-zinc-100">
+            <input type="text" id="cfg-store-footer" value="Terima Kasih! Nikmati Pedasnya Chicken Fire!" class="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-zinc-100">
           </div>
           <div class="flex items-center space-x-3 pt-1">
             <label class="text-[10px] font-bold text-zinc-400">Aktifkan PPN / Pajak (%)</label>
@@ -344,25 +328,21 @@
         <div class="bg-zinc-950 p-4 rounded-xl border border-zinc-800 space-y-3">
           <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
             <h4 class="font-bold text-emerald-400 uppercase tracking-wider text-[11px]"><i class="fas fa-receipt mr-1.5"></i> Printer Customer (Bukti Pembayaran)</h4>
-            <button onclick="testPrint('customer')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded text-[10px] font-bold"><i class="fas fa-vial mr-1"></i> Tes Cetak</button>
+            <button onclick="testPrint('customer')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded text-[10px] font-bold"><i class="fas fa-vial mr-1"></i> Tes Cetak</button>
           </div>
-          <div class="grid grid-cols-3 gap-3">
+          <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="text-[10px] font-bold text-zinc-400 block mb-1">Koneksi Printer</label>
-              <select id="cfg-cust-connection" class="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-zinc-100">
-                <option value="system">Direct System / Bluetooth (Browser)</option>
+              <label class="text-[10px] font-bold text-zinc-400 block mb-1">Koneksi Hardware</label>
+              <select id="cfg-cust-connection" class="w-full bg-zinc-900 border border-emerald-600/50 rounded p-2 text-emerald-400 font-bold">
+                <option value="rawbt">RawBT Driver (Direct Bluetooth Thermal)</option>
               </select>
             </div>
             <div>
               <label class="text-[10px] font-bold text-zinc-400 block mb-1">Ukuran Kertas</label>
               <select id="cfg-cust-paper" class="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-zinc-100">
-                <option value="58mm">58 mm (Kertas Struk Standard)</option>
+                <option value="58mm">58 mm (Standard Kasir)</option>
                 <option value="80mm">80 mm (Kertas Lebar)</option>
               </select>
-            </div>
-            <div>
-              <label class="text-[10px] font-bold text-zinc-400 block mb-1">Jumlah Cetak</label>
-              <input type="number" id="cfg-cust-copies" value="1" min="1" class="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-zinc-100">
             </div>
           </div>
         </div>
@@ -371,13 +351,13 @@
         <div class="bg-zinc-950 p-4 rounded-xl border border-zinc-800 space-y-3">
           <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
             <h4 class="font-bold text-amber-400 uppercase tracking-wider text-[11px]"><i class="fas fa-utensils mr-1.5"></i> Printer Dapur / Bar (Slip Pesanan)</h4>
-            <button onclick="testPrint('kitchen')" class="bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1 rounded text-[10px] font-bold"><i class="fas fa-vial mr-1"></i> Tes Cetak Dapur</button>
+            <button onclick="testPrint('kitchen')" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded text-[10px] font-bold"><i class="fas fa-vial mr-1"></i> Tes Cetak Dapur</button>
           </div>
-          <div class="grid grid-cols-3 gap-3">
+          <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="text-[10px] font-bold text-zinc-400 block mb-1">Koneksi Printer</label>
-              <select id="cfg-kitchen-connection" class="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-zinc-100">
-                <option value="system">Direct System / Bluetooth (Browser)</option>
+              <label class="text-[10px] font-bold text-zinc-400 block mb-1">Koneksi Hardware</label>
+              <select id="cfg-kitchen-connection" class="w-full bg-zinc-900 border border-amber-600/50 rounded p-2 text-amber-400 font-bold">
+                <option value="rawbt">RawBT Driver (Direct Bluetooth Thermal)</option>
               </select>
             </div>
             <div>
@@ -387,25 +367,18 @@
                 <option value="80mm">80 mm</option>
               </select>
             </div>
-            <div>
-              <label class="text-[10px] font-bold text-zinc-400 block mb-1">Jumlah Cetak</label>
-              <input type="number" id="cfg-kitchen-copies" value="1" min="1" class="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-zinc-100">
-            </div>
           </div>
         </div>
 
       </div>
 
-      <div class="p-4 border-t border-zinc-800 bg-zinc-950 flex justify-end space-x-2">
+      <div class="p-4 border-t border-zinc-800 bg-zinc-950 flex justify-end">
         <button id="save-printer-settings-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold px-5 py-2 rounded-lg text-xs shadow">
           <i class="fas fa-save mr-1.5"></i> Simpan Pengaturan
         </button>
       </div>
     </div>
   </div>
-
-  <!-- AREA RENDER TERSEMBUNYI UNTUK PENCETAKAN THERMAL -->
-  <div id="printable-receipt"></div>
 
   <script type="module" src="app.js"></script>
   <script>
