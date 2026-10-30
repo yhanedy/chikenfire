@@ -12,7 +12,7 @@ let currentCategory = "semua";
 let activeCashierName = "";
 let adminMasterPassword = "1234";
 
-// KONFIGURASI PRINTER DEFAULT
+// KONFIGURASI PRINTER DEFAULT (MENGUNCI KONESI KE RAWBT DIRECT BLUETOOTH)
 let printerConfig = JSON.parse(localStorage.getItem('cfm_printer_cfg')) || {
   storeName: "CHICKEN FIRE MATARAM",
   storePhone: "0812-3456-7890",
@@ -20,10 +20,8 @@ let printerConfig = JSON.parse(localStorage.getItem('cfm_printer_cfg')) || {
   storeFooter: "Terima Kasih! Nikmati Pedasnya Chicken Fire!",
   taxPercent: 0,
   custPaper: "58mm",
-  custCopies: 1,
   kitchenPaper: "58mm",
-  kitchenCopies: 1,
-  printMethod: "rawbt" // Options: 'rawbt' (Rekomendasi Android Bluetooth) | 'webbluetooth' | 'browser'
+  printMethod: "rawbt"
 };
 
 // 1. MODAL PENGATURAN PRINTER
@@ -34,12 +32,7 @@ document.getElementById('open-printer-settings-btn').addEventListener('click', (
   document.getElementById('cfg-store-footer').value = printerConfig.storeFooter;
   document.getElementById('cfg-tax-percent').value = printerConfig.taxPercent;
   document.getElementById('cfg-cust-paper').value = printerConfig.custPaper;
-  document.getElementById('cfg-cust-copies').value = printerConfig.custCopies;
   document.getElementById('cfg-kitchen-paper').value = printerConfig.kitchenPaper;
-  document.getElementById('cfg-kitchen-copies').value = printerConfig.kitchenCopies;
-
-  const connSelect = document.getElementById('cfg-cust-connection');
-  if (connSelect) connSelect.value = printerConfig.printMethod || 'rawbt';
 
   document.getElementById('printer-modal').classList.remove('hidden');
 });
@@ -49,8 +42,6 @@ document.getElementById('close-printer-modal-btn').addEventListener('click', () 
 });
 
 document.getElementById('save-printer-settings-btn').addEventListener('click', () => {
-  const connVal = document.getElementById('cfg-cust-connection') ? document.getElementById('cfg-cust-connection').value : 'rawbt';
-  
   printerConfig = {
     storeName: document.getElementById('cfg-store-name').value,
     storePhone: document.getElementById('cfg-store-phone').value,
@@ -58,14 +49,12 @@ document.getElementById('save-printer-settings-btn').addEventListener('click', (
     storeFooter: document.getElementById('cfg-store-footer').value,
     taxPercent: parseFloat(document.getElementById('cfg-tax-percent').value) || 0,
     custPaper: document.getElementById('cfg-cust-paper').value,
-    custCopies: parseInt(document.getElementById('cfg-cust-copies').value) || 1,
     kitchenPaper: document.getElementById('cfg-kitchen-paper').value,
-    kitchenCopies: parseInt(document.getElementById('cfg-kitchen-copies').value) || 1,
-    printMethod: connVal
+    printMethod: "rawbt" // Hardcoded RawBT Protocol
   };
 
   localStorage.setItem('cfm_printer_cfg', JSON.stringify(printerConfig));
-  alert("Pengaturan Printer Berhasil Disimpan!");
+  alert("Pengaturan Printer Thermal Berhasil Disimpan!");
   document.getElementById('printer-modal').classList.add('hidden');
 });
 
@@ -412,7 +401,7 @@ document.getElementById('process-order-btn').addEventListener('click', async () 
     lastSavedCustomer = customerName;
     lastSavedTable = tableNumber;
 
-    // Direct cetak thermal
+    // Direct Cetak Thermal Bluetooth
     executePrint('customer', newOrder.id, customerName, tableNumber, lastSavedCart, total, pay, pay - total, currentPayMethod);
 
     cart = [];
@@ -440,7 +429,7 @@ document.getElementById('print-drink-btn').addEventListener('click', () => {
   executePrint('drink', "SLIP BAR", cust, tbl, items, 0, 0, 0, currentPayMethod);
 });
 
-// FUNGSI UTAMA ENGINE CETAK BLUETOOTH THERMAL (ESC/POS & INTENT PROTOCOL)
+// ENGINE DIRECT BLUETOOTH THERMAL PRINTING (RAWBT PROTOCOL)
 function executePrint(type, orderId, customer, table, itemsList, total, pay, change, payMethod) {
   const isCust = type === 'customer';
   let filteredItems = itemsList;
@@ -453,7 +442,7 @@ function executePrint(type, orderId, customer, table, itemsList, total, pay, cha
   const now = new Date();
   const timeStr = now.toLocaleDateString('id-ID') + ' ' + now.toLocaleTimeString('id-ID');
 
-  // BUILD TEKS STRUK THERMAL METODE RAWBT INTENT
+  // STRUKTUR DATA ESC/POS STRUK THERMAL
   let printText = `${printerConfig.storeName}\n`;
   printText += `${printerConfig.storeAddress}\n`;
   printText += `Telp: ${printerConfig.storePhone}\n`;
@@ -491,19 +480,9 @@ function executePrint(type, orderId, customer, table, itemsList, total, pay, cha
     printText += `--- SEGERA DIPROSES ---\n\n\n`;
   }
 
-  // JIKA MENGGUNAKAN METODE RAWBT (DIRECT HARDWARE PRINTING DI ANDROID)
-  if (printerConfig.printMethod === 'rawbt' || !printerConfig.printMethod) {
-    // Membuka Driver Bluetooth Printer RawBT tanpa lewat PDF
-    const rawbtUrl = "intent:" + encodeURIComponent(printText) + "#Intent;scheme=rawbt;package=ru.a404m.rawbt;end;";
-    window.location.href = rawbtUrl;
-  } else {
-    // FALLBACK CHROME BROWSER PRINT
-    const container = document.getElementById('printable-receipt');
-    if(container) {
-      container.innerHTML = `<pre style="font-family:monospace; font-size:11px;">${printText}</pre>`;
-      window.print();
-    }
-  }
+  // DIKUNCI KE PROTOKOL RAWBT UNTUK DIRECT BLUETOOTH PRINTING DARI BROWSER TABLET
+  const rawbtUrl = "intent:" + encodeURIComponent(printText) + "#Intent;scheme=rawbt;package=ru.a404m.rawbt;end;";
+  window.location.href = rawbtUrl;
 }
 
 loadCashiers();
