@@ -12,17 +12,18 @@ let currentCategory = "semua";
 let activeCashierName = "";
 let adminMasterPassword = "1234";
 
-// KONFIGURASI PRINTER DEFAULT (TERSIMPAN DI LOCALSTORAGE)
+// KONFIGURASI PRINTER DEFAULT
 let printerConfig = JSON.parse(localStorage.getItem('cfm_printer_cfg')) || {
   storeName: "CHICKEN FIRE MATARAM",
   storePhone: "0812-3456-7890",
   storeAddress: "Karanganyar - Jawa Tengah",
-  storeFooter: "Terima Kasih Atas Kunjungan Anda! Nikmati Pedasnya Chicken Fire!",
+  storeFooter: "Terima Kasih! Nikmati Pedasnya Chicken Fire!",
   taxPercent: 0,
   custPaper: "58mm",
   custCopies: 1,
   kitchenPaper: "58mm",
-  kitchenCopies: 1
+  kitchenCopies: 1,
+  printMethod: "rawbt" // Options: 'rawbt' (Rekomendasi Android Bluetooth) | 'webbluetooth' | 'browser'
 };
 
 // 1. MODAL PENGATURAN PRINTER
@@ -37,6 +38,9 @@ document.getElementById('open-printer-settings-btn').addEventListener('click', (
   document.getElementById('cfg-kitchen-paper').value = printerConfig.kitchenPaper;
   document.getElementById('cfg-kitchen-copies').value = printerConfig.kitchenCopies;
 
+  const connSelect = document.getElementById('cfg-cust-connection');
+  if (connSelect) connSelect.value = printerConfig.printMethod || 'rawbt';
+
   document.getElementById('printer-modal').classList.remove('hidden');
 });
 
@@ -45,6 +49,8 @@ document.getElementById('close-printer-modal-btn').addEventListener('click', () 
 });
 
 document.getElementById('save-printer-settings-btn').addEventListener('click', () => {
+  const connVal = document.getElementById('cfg-cust-connection') ? document.getElementById('cfg-cust-connection').value : 'rawbt';
+  
   printerConfig = {
     storeName: document.getElementById('cfg-store-name').value,
     storePhone: document.getElementById('cfg-store-phone').value,
@@ -54,11 +60,12 @@ document.getElementById('save-printer-settings-btn').addEventListener('click', (
     custPaper: document.getElementById('cfg-cust-paper').value,
     custCopies: parseInt(document.getElementById('cfg-cust-copies').value) || 1,
     kitchenPaper: document.getElementById('cfg-kitchen-paper').value,
-    kitchenCopies: parseInt(document.getElementById('cfg-kitchen-copies').value) || 1
+    kitchenCopies: parseInt(document.getElementById('cfg-kitchen-copies').value) || 1,
+    printMethod: connVal
   };
 
   localStorage.setItem('cfm_printer_cfg', JSON.stringify(printerConfig));
-  alert("Pengaturan Printer & Struk Berhasil Disimpan!");
+  alert("Pengaturan Printer Berhasil Disimpan!");
   document.getElementById('printer-modal').classList.add('hidden');
 });
 
@@ -433,11 +440,8 @@ document.getElementById('print-drink-btn').addEventListener('click', () => {
   executePrint('drink', "SLIP BAR", cust, tbl, items, 0, 0, 0, currentPayMethod);
 });
 
-// FUNGSI EKSEKUSI CETAK THERMAL PRINTER (58MM / 80MM)
+// FUNGSI UTAMA ENGINE CETAK BLUETOOTH THERMAL (ESC/POS & INTENT PROTOCOL)
 function executePrint(type, orderId, customer, table, itemsList, total, pay, change, payMethod) {
-  const container = document.getElementById('printable-receipt');
-  if(!container) return;
-
   const isCust = type === 'customer';
   let filteredItems = itemsList;
 
@@ -446,64 +450,60 @@ function executePrint(type, orderId, customer, table, itemsList, total, pay, cha
 
   if(filteredItems.length === 0) return alert(`Tidak ada menu untuk kategori ${type === 'kitchen' ? 'Dapur' : 'Bar'}.`);
 
-  let subtotalCalc = 0;
-  let itemRowsHTML = '';
+  const now = new Date();
+  const timeStr = now.toLocaleDateString('id-ID') + ' ' + now.toLocaleTimeString('id-ID');
 
+  // BUILD TEKS STRUK THERMAL METODE RAWBT INTENT
+  let printText = `${printerConfig.storeName}\n`;
+  printText += `${printerConfig.storeAddress}\n`;
+  printText += `Telp: ${printerConfig.storePhone}\n`;
+  printText += `--------------------------------\n`;
+  printText += `${isCust ? 'STRUK PEMBAYARAN' : (type === 'kitchen' ? 'SLIP DAPUR' : 'SLIP BAR')}\n`;
+  printText += `No: #${orderId}\n`;
+  printText += `Waktu: ${timeStr}\n`;
+  printText += `Kasir: ${activeCashierName || "Kasir"}\n`;
+  printText += `Cust: ${customer} (${table})\n`;
+  printText += `Metode: ${payMethod}\n`;
+  printText += `--------------------------------\n`;
+
+  let subtotalCalc = 0;
   filteredItems.forEach(i => {
     const itemSub = i.finalPrice * i.qty;
     subtotalCalc += itemSub;
-    itemRowsHTML += `
-      <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-        <span style="font-weight:bold;">${i.name} x${i.qty}</span>
-        ${isCust ? `<span>Rp ${itemSub.toLocaleString('id-ID')}</span>` : ''}
-      </div>
-      ${i.itemNote ? `<div style="font-size:10px; padding-left:8px;">*Req: ${i.itemNote}</div>` : ''}
-    `;
+    printText += `${i.name} x${i.qty} ${isCust ? 'Rp ' + itemSub.toLocaleString('id-ID') : ''}\n`;
+    if(i.itemNote) printText += ` *Req: ${i.itemNote}\n`;
   });
 
-  const taxAmount = isCust ? (subtotalCalc * (printerConfig.taxPercent / 100)) : 0;
-  const finalTotal = isCust ? (subtotalCalc + taxAmount) : 0;
+  printText += `--------------------------------\n`;
 
-  let now = new Date();
-  let timeStr = now.toLocaleDateString('id-ID') + ' ' + now.toLocaleTimeString('id-ID');
+  if(isCust) {
+    const taxAmount = subtotalCalc * (printerConfig.taxPercent / 100);
+    const finalTotal = subtotalCalc + taxAmount;
 
-  container.innerHTML = `
-    <div style="width: ${printerConfig.custPaper === '80mm' ? '78mm' : '56mm'}; font-size:11px; font-family:monospace; line-height:1.2;">
-      <div style="text-align:center; font-weight:bold; font-size:13px;">${printerConfig.storeName}</div>
-      <div style="text-align:center; font-size:9px;">${printerConfig.storeAddress}</div>
-      <div style="text-align:center; font-size:9px;">Telp: ${printerConfig.storePhone}</div>
-      <div style="border-bottom:1px dashed #000; margin:4px 0;"></div>
-      
-      <div><b>${isCust ? 'STRUK PEMBAYARAN' : (type === 'kitchen' ? 'SLIP DAPUR' : 'SLIP BAR')}</b></div>
-      <div>No: #${orderId}</div>
-      <div>Waktu: ${timeStr}</div>
-      <div>Kasir: ${activeCashierName || "Kasir"}</div>
-      <div>Cust: ${customer} (${table})</div>
-      <div>Metode: ${payMethod}</div>
-      <div style="border-bottom:1px dashed #000; margin:4px 0;"></div>
+    printText += `Subtotal: Rp ${subtotalCalc.toLocaleString('id-ID')}\n`;
+    if(printerConfig.taxPercent > 0) printText += `PPN (${printerConfig.taxPercent}%): Rp ${taxAmount.toLocaleString('id-ID')}\n`;
+    printText += `TOTAL: Rp ${finalTotal.toLocaleString('id-ID')}\n`;
+    printText += `Bayar: Rp ${pay.toLocaleString('id-ID')}\n`;
+    printText += `Kembali: Rp ${change.toLocaleString('id-ID')}\n`;
+    printText += `--------------------------------\n`;
+    printText += `${printerConfig.storeFooter}\n\n\n`;
+  } else {
+    printText += `--- SEGERA DIPROSES ---\n\n\n`;
+  }
 
-      ${itemRowsHTML}
-
-      <div style="border-bottom:1px dashed #000; margin:4px 0;"></div>
-
-      ${isCust ? `
-        <div style="display:flex; justify-content:space-between;"><span>Subtotal:</span><span>Rp ${subtotalCalc.toLocaleString('id-ID')}</span></div>
-        ${printerConfig.taxPercent > 0 ? `<div style="display:flex; justify-content:space-between;"><span>PPN (${printerConfig.taxPercent}%):</span><span>Rp ${taxAmount.toLocaleString('id-ID')}</span></div>` : ''}
-        <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:12px; margin-top:2px;">
-          <span>TOTAL:</span><span>Rp ${finalTotal.toLocaleString('id-ID')}</span>
-        </div>
-        <div style="display:flex; justify-content:space-between;"><span>Bayar:</span><span>Rp ${pay.toLocaleString('id-ID')}</span></div>
-        <div style="display:flex; justify-content:space-between;"><span>Kembali:</span><span>Rp ${change.toLocaleString('id-ID')}</span></div>
-        <div style="border-bottom:1px dashed #000; margin:4px 0;"></div>
-        <div style="text-align:center; font-size:9px; margin-top:6px;">${printerConfig.storeFooter}</div>
-      ` : `
-        <div style="text-align:center; font-weight:bold; margin-top:4px;">--- SEGERA DIPROSES ---</div>
-      `}
-    </div>
-  `;
-
-  // Trigger dialog print sistem/bluetooth browser
-  window.print();
+  // JIKA MENGGUNAKAN METODE RAWBT (DIRECT HARDWARE PRINTING DI ANDROID)
+  if (printerConfig.printMethod === 'rawbt' || !printerConfig.printMethod) {
+    // Membuka Driver Bluetooth Printer RawBT tanpa lewat PDF
+    const rawbtUrl = "intent:" + encodeURIComponent(printText) + "#Intent;scheme=rawbt;package=ru.a404m.rawbt;end;";
+    window.location.href = rawbtUrl;
+  } else {
+    // FALLBACK CHROME BROWSER PRINT
+    const container = document.getElementById('printable-receipt');
+    if(container) {
+      container.innerHTML = `<pre style="font-family:monospace; font-size:11px;">${printText}</pre>`;
+      window.print();
+    }
+  }
 }
 
 loadCashiers();
