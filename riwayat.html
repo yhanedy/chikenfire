@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chicken Fire Mataram - Riwayat & Analitik</title>
-  
+
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -29,7 +29,7 @@
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #09090b; }
     ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
-    
+
     input[type="date"]::-webkit-calendar-picker-indicator,
     input[type="month"]::-webkit-calendar-picker-indicator {
       filter: invert(1);
@@ -86,6 +86,7 @@
         <div class="flex gap-2">
           <input type="date" id="filter-date" class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-xs text-zinc-200">
           <button id="btn-filter-date" class="bg-red-600 hover:bg-red-700 text-white font-bold px-4 rounded-xl text-xs">Cari</button>
+          <button id="btn-reset-date" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold px-3 rounded-xl text-xs border border-zinc-700">Reset</button>
         </div>
         <div id="filter-date-result" class="text-xs text-zinc-400 font-medium">Pilih tanggal di atas.</div>
       </div>
@@ -95,6 +96,7 @@
         <div class="flex gap-2">
           <input type="month" id="filter-month" class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-xs text-zinc-200">
           <button id="btn-filter-month" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 rounded-xl text-xs">Lihat</button>
+          <button id="btn-reset-month" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold px-3 rounded-xl text-xs border border-zinc-700">Reset</button>
         </div>
         <div id="filter-month-result" class="text-xs text-zinc-400 font-medium">Pilih bulan & tahun.</div>
       </div>
@@ -103,14 +105,18 @@
     <!-- CHART -->
     <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
       <div class="flex justify-between items-center border-b border-zinc-800 pb-4">
-        <h3 class="font-bold text-sm text-white"><i class="fas fa-chart-area text-red-500 mr-2"></i> Grafik Penjualan</h3>
+        <h3 class="font-bold text-sm text-white"><i class="fas fa-chart-area text-red-500 mr-2"></i> Grafik Penjualan (7 Hari Terakhir)</h3>
+        <span id="chart-range-label" class="text-[10px] text-zinc-500 font-mono"></span>
       </div>
       <div class="h-72 w-full relative"><canvas id="salesChart"></canvas></div>
     </div>
 
     <!-- TABLE -->
     <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
-      <h3 class="font-bold text-xs uppercase text-white"><i class="fas fa-list text-zinc-400 mr-2"></i> Daftar Transaksi Terbaru</h3>
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-xs uppercase text-white"><i class="fas fa-list text-zinc-400 mr-2"></i> Daftar Transaksi</h3>
+        <span id="table-count" class="text-[10px] text-zinc-500 font-mono"></span>
+      </div>
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs text-zinc-300">
           <thead class="bg-zinc-950 text-zinc-400 uppercase text-[10px] border-b border-zinc-800">
@@ -139,26 +145,38 @@
     let allOrders = [];
     let salesChartInstance = null;
 
+    // ==== HELPER ====
+    function safeDate(v) {
+      if (!v) return null;
+      const d = new Date(v);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    function fmtRp(n) { return 'Rp ' + (Number(n) || 0).toLocaleString('id-ID'); }
+
+    // ==== FETCH ====
     async function fetchOrders() {
       try {
         const rows = await sql`SELECT * FROM orders ORDER BY created_at DESC`;
-        allOrders = rows;
-
+        allOrders = rows || [];
         calculateStats();
         renderTable(allOrders);
         initChart();
       } catch (err) {
         console.error("Gagal mengambil data dari Neon DB:", err);
+        document.getElementById('transaction-rows').innerHTML =
+          '<tr><td colspan="7" class="text-center py-6 text-red-400">Gagal memuat data. Cek koneksi DB.</td></tr>';
       }
     }
 
+    // ==== STATS ====
     function calculateStats() {
       const now = new Date();
       let todayRev = 0, todayCount = 0, monthRev = 0;
 
       allOrders.forEach(o => {
         if (o.status === 'CANCELLED') return;
-        const d = new Date(o.created_at);
+        const d = safeDate(o.created_at);
+        if (!d) return;
         const amt = parseFloat(o.total_amount) || 0;
 
         if (d.toDateString() === now.toDateString()) {
@@ -170,80 +188,205 @@
         }
       });
 
-      document.getElementById('stat-today-revenue').innerText = 'Rp ' + todayRev.toLocaleString('id-ID');
+      document.getElementById('stat-today-revenue').innerText = fmtRp(todayRev);
       document.getElementById('stat-today-count').innerText = todayCount + ' Trx';
-      document.getElementById('stat-today-avg').innerText = 'Rp ' + Math.round(todayCount ? todayRev/todayCount : 0).toLocaleString('id-ID');
-      document.getElementById('stat-month-revenue').innerText = 'Rp ' + monthRev.toLocaleString('id-ID');
+      document.getElementById('stat-today-avg').innerText = fmtRp(todayCount ? Math.round(todayRev / todayCount) : 0);
+      document.getElementById('stat-month-revenue').innerText = fmtRp(monthRev);
     }
 
+    // ==== TABLE ====
     function renderTable(dataList) {
       const container = document.getElementById('transaction-rows');
+      const countEl = document.getElementById('table-count');
       container.innerHTML = '';
 
+      if (countEl) countEl.innerText = `${dataList.length} transaksi`;
+
       if (!dataList.length) {
-        container.innerHTML = '<tr><td colspan="7" class="text-center py-6 text-zinc-500">Kosong.</td></tr>';
+        container.innerHTML = '<tr><td colspan="7" class="text-center py-6 text-zinc-500">Tidak ada transaksi.</td></tr>';
         return;
       }
 
+      const frag = document.createDocumentFragment();
       dataList.forEach(o => {
-        const dateObj = new Date(o.created_at);
+        const d = safeDate(o.created_at);
         const isCancelled = o.status === 'CANCELLED';
+        const timeStr = d
+          ? `${d.toLocaleDateString('id-ID')} ${d.toLocaleTimeString('id-ID')}`
+          : '-';
 
-        container.innerHTML += `
-          <tr class="hover:bg-zinc-800/40 ${isCancelled ? 'opacity-50' : ''}">
-            <td class="p-3 font-mono text-[11px] text-zinc-400">${dateObj.toLocaleDateString('id-ID')} ${dateObj.toLocaleTimeString('id-ID')}</td>
-            <td class="p-3 font-bold">${o.cashier_name}</td>
-            <td class="p-3">${o.customer_name}</td>
-            <td class="p-3">${o.table_number}</td>
-            <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">${o.payment_method}</span></td>
-            <td class="p-3 text-right font-black ${isCancelled ? 'line-through text-zinc-500' : 'text-red-500'}">Rp ${parseFloat(o.total_amount).toLocaleString('id-ID')}</td>
-            <td class="p-3 text-center">
-              ${isCancelled ? '<span class="text-red-400 font-bold text-[10px]">BATAL</span>' : `
-                <button onclick="cancelOrder(${o.id})" class="bg-zinc-800 hover:bg-red-900 border border-zinc-700 px-2 py-1 rounded text-[10px] font-bold">Batal</button>
-              `}
-            </td>
-          </tr>
+        const tr = document.createElement('tr');
+        tr.className = `hover:bg-zinc-800/40 ${isCancelled ? 'opacity-50' : ''}`;
+        tr.innerHTML = `
+          <td class="p-3 font-mono text-[11px] text-zinc-400">${timeStr}</td>
+          <td class="p-3 font-bold">${o.cashier_name || '-'}</td>
+          <td class="p-3">${o.customer_name || '-'}</td>
+          <td class="p-3">${o.table_number || '-'}</td>
+          <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">${o.payment_method || '-'}</span></td>
+          <td class="p-3 text-right font-black ${isCancelled ? 'line-through text-zinc-500' : 'text-red-500'}">${fmtRp(o.total_amount)}</td>
+          <td class="p-3 text-center">
+            ${isCancelled
+              ? '<span class="text-red-400 font-bold text-[10px]">BATAL</span>'
+              : `<button data-id="${o.id}" class="btn-cancel bg-zinc-800 hover:bg-red-900 border border-zinc-700 px-2 py-1 rounded text-[10px] font-bold">Batal</button>`}
+          </td>
         `;
+        frag.appendChild(tr);
+      });
+      container.appendChild(frag);
+
+      // Bind cancel buttons
+      container.querySelectorAll('.btn-cancel').forEach(btn => {
+        btn.addEventListener('click', () => window.cancelOrder(btn.dataset.id));
       });
     }
 
+    // ==== CANCEL ORDER ====
     window.cancelOrder = async (id) => {
       const reason = prompt("Alasan pembatalan:", "Customer Batal");
       if (!reason) return;
-
-      await sql`UPDATE orders SET status = 'CANCELLED', cancel_reason = ${reason} WHERE id = ${id}`;
-      fetchOrders();
+      try {
+        await sql`UPDATE orders SET status = 'CANCELLED', cancel_reason = ${reason} WHERE id = ${id}`;
+        await fetchOrders();
+      } catch (err) {
+        console.error(err);
+        alert("Gagal membatalkan transaksi.");
+      }
     };
 
+    // ==== CHART ====
     function initChart() {
-      const ctx = document.getElementById('salesChart').getContext('2d');
-      if (salesChartInstance) salesChartInstance.destroy();
+      const canvas = document.getElementById('salesChart');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (salesChartInstance) { salesChartInstance.destroy(); salesChartInstance = null; }
 
-      let labels = [], dataValues = [];
+      const labels = [], dataValues = [];
       for (let i = 6; i >= 0; i--) {
-        const d = new Date(); d.setDate(d.getDate() - i);
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        d.setHours(0, 0, 0, 0);
         labels.push(d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' }));
 
         let daySum = 0;
         allOrders.forEach(o => {
           if (o.status === 'CANCELLED') return;
-          if (new Date(o.created_at).toDateString() === d.toDateString()) {
+          const od = safeDate(o.created_at);
+          if (!od) return;
+          if (od.toDateString() === d.toDateString()) {
             daySum += parseFloat(o.total_amount) || 0;
           }
         });
         dataValues.push(daySum);
       }
 
+      const rangeLabel = document.getElementById('chart-range-label');
+      if (rangeLabel) rangeLabel.innerText = `${labels[0]} — ${labels[labels.length - 1]}`;
+
       salesChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: labels,
-          datasets: [{ label: 'Omset', data: dataValues, borderColor: '#E70011', backgroundColor: 'rgba(231,0,17,0.15)', fill: true }]
+          labels,
+          datasets: [{
+            label: 'Omset',
+            data: dataValues,
+            borderColor: '#E70011',
+            backgroundColor: 'rgba(231,0,17,0.15)',
+            fill: true,
+            tension: 0.35,
+            pointBackgroundColor: '#E70011',
+            pointRadius: 3
+          }]
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (c) => 'Rp ' + (c.parsed.y || 0).toLocaleString('id-ID')
+              }
+            }
+          },
+          scales: {
+            x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#a1a1aa' } },
+            y: {
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: {
+                color: '#a1a1aa',
+                callback: (v) => 'Rp ' + Number(v).toLocaleString('id-ID')
+              }
+            }
+          }
+        }
       });
     }
 
+    // ==== FILTER TANGGAL ====
+    document.getElementById('btn-filter-date').addEventListener('click', () => {
+      const val = document.getElementById('filter-date').value;
+      const res = document.getElementById('filter-date-result');
+      if (!val) { res.innerText = 'Pilih tanggal dulu.'; return; }
+
+      const target = new Date(val + 'T00:00:00');
+      const filtered = allOrders.filter(o => {
+        const d = safeDate(o.created_at);
+        return d && d.toDateString() === target.toDateString();
+      });
+      const valid = filtered.filter(o => o.status !== 'CANCELLED');
+      const revenue = valid.reduce((s, o) => s + (parseFloat(o.total_amount) || 0), 0);
+
+      res.innerHTML = `
+        <span class="text-emerald-400 font-bold">${filtered.length} transaksi</span> •
+        Omset: <span class="text-red-400 font-bold">${fmtRp(revenue)}</span>
+        ${filtered.length ? '' : '<br><span class="text-zinc-500">Tidak ada transaksi di tanggal ini.</span>'}
+      `;
+      renderTable(filtered);
+    });
+
+    document.getElementById('btn-reset-date').addEventListener('click', () => {
+      document.getElementById('filter-date').value = '';
+      document.getElementById('filter-date-result').innerText = 'Pilih tanggal di atas.';
+      renderTable(allOrders);
+    });
+
+    // ==== FILTER BULAN ====
+    document.getElementById('btn-filter-month').addEventListener('click', () => {
+      const val = document.getElementById('filter-month').value;
+      const res = document.getElementById('filter-month-result');
+      if (!val) { res.innerText = 'Pilih bulan & tahun dulu.'; return; }
+
+      const [y, m] = val.split('-').map(Number);
+      const filtered = allOrders.filter(o => {
+        const d = safeDate(o.created_at);
+        return d && d.getFullYear() === y && (d.getMonth() + 1) === m;
+      });
+      const valid = filtered.filter(o => o.status !== 'CANCELLED');
+      const revenue = valid.reduce((s, o) => s + (parseFloat(o.total_amount) || 0), 0);
+      const avg = valid.length ? Math.round(revenue / valid.length) : 0;
+
+      res.innerHTML = `
+        <span class="text-amber-400 font-bold">${filtered.length} transaksi</span> •
+        Omset: <span class="text-red-400 font-bold">${fmtRp(revenue)}</span> •
+        Rata-rata: <span class="text-zinc-200 font-bold">${fmtRp(avg)}</span>
+      `;
+      renderTable(filtered);
+    });
+
+    document.getElementById('btn-reset-month').addEventListener('click', () => {
+      document.getElementById('filter-month').value = '';
+      document.getElementById('filter-month-result').innerText = 'Pilih bulan & tahun.';
+      renderTable(allOrders);
+    });
+
+    // ==== DEFAULT MONTH INPUT ====
+    (function setDefaultMonth() {
+      const now = new Date();
+      document.getElementById('filter-month').value =
+        `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    })();
+
+    // ==== START ====
     fetchOrders();
   </script>
 </body>
