@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="id" class="dark h-full bg-zinc-950">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Owner Dashboard - Chicken Fire Mataram</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = { 
+      darkMode: 'class', 
+      theme: { 
+        extend: { 
+          fontFamily: { sans: ['Inter', 'sans-serif'] }, 
+          colors: { brand: { red: '#E70011' } } 
+        } 
+      } 
+    }
+  </script>
+  <style>
+    html, body { height: 100%; margin: 0; padding: 0; background-color: #09090b !important; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #09090b; }
+    ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
+    input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+  </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 font-sans min-h-screen p-4 md:p-6 antialiased">
+
+  <div class="max-w-7xl mx-auto space-y-6">
+    
+    <!-- HEADER -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-zinc-900 p-5 rounded-2xl border border-zinc-800 gap-4">
+      <div>
+        <h1 class="font-black text-2xl text-white"><i class="fas fa-chart-line text-red-500 mr-3"></i> OWNER DASHBOARD</h1>
+        <p class="text-sm text-zinc-400 mt-1">Pantau arus kas (cash flow) dan performa restoran Anda.</p>
+      </div>
+      <div class="flex items-center space-x-3">
+        <!-- Menu Kalender (Filter Tanggal) -->
+        <div class="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 flex items-center">
+          <i class="fas fa-calendar-alt text-zinc-400 mr-2"></i>
+          <input type="date" id="filter-date" class="bg-transparent text-sm text-white focus:outline-none">
+        </div>
+        <a href="admin.html" class="bg-zinc-800 hover:bg-zinc-700 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition border border-zinc-700">&larr; Kembali</a>
+      </div>
+    </div>
+
+    <!-- STATS CARDS (PEMBUKUAN) -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <!-- Harian -->
+      <div class="bg-gradient-to-br from-zinc-900 to-zinc-950 border border-zinc-800 rounded-2xl p-5 shadow-lg">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1">Omset (Tanggal Dipilih)</p>
+            <h3 id="stat-daily" class="text-3xl font-black text-white">Rp 0</h3>
+          </div>
+          <div class="w-10 h-10 bg-red-950/50 rounded-full flex items-center justify-center"><i class="fas fa-calendar-day text-red-500"></i></div>
+        </div>
+      </div>
+      <!-- Mingguan -->
+      <div class="bg-gradient-to-br from-zinc-900 to-zinc-950 border border-zinc-800 rounded-2xl p-5 shadow-lg">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1">Omset Pekan Ini</p>
+            <h3 id="stat-weekly" class="text-3xl font-black text-white">Rp 0</h3>
+          </div>
+          <div class="w-10 h-10 bg-blue-950/50 rounded-full flex items-center justify-center"><i class="fas fa-calendar-week text-blue-500"></i></div>
+        </div>
+      </div>
+      <!-- Bulanan -->
+      <div class="bg-gradient-to-br from-zinc-900 to-zinc-950 border border-zinc-800 rounded-2xl p-5 shadow-lg">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1">Omset Bulan Ini</p>
+            <h3 id="stat-monthly" class="text-3xl font-black text-white">Rp 0</h3>
+          </div>
+          <div class="w-10 h-10 bg-emerald-950/50 rounded-full flex items-center justify-center"><i class="fas fa-calendar-alt text-emerald-500"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHART & INSIGHT -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <!-- Chart Area -->
+      <div class="lg:col-span-2 bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+        <h3 class="font-bold text-white text-sm mb-4">Grafik Cash Flow (7 Hari Terakhir)</h3>
+        <div class="h-64 w-full"><canvas id="cashFlowChart"></canvas></div>
+      </div>
+      
+      <!-- Insight Tambahan -->
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 flex flex-col justify-between">
+        <div>
+          <h3 class="font-bold text-white text-sm mb-4 border-b border-zinc-800 pb-2">Insight Owner</h3>
+          <div class="space-y-4">
+            <div>
+              <p class="text-xs text-zinc-400 mb-1">Rata-rata Belanja (Basket Size)</p>
+              <p id="insight-avg" class="text-xl font-bold text-amber-400">Rp 0</p>
+            </div>
+            <div>
+              <p class="text-xs text-zinc-400 mb-1">Total Transaksi</p>
+              <p id="insight-trx" class="text-xl font-bold text-blue-400">0 Trx</p>
+            </div>
+            <div>
+              <p class="text-xs text-zinc-400 mb-1">Paling Laris</p>
+              <p id="insight-best-seller" class="text-sm font-bold text-emerald-400">Memuat...</p>
+            </div>
+          </div>
+        </div>
+        <div class="mt-4 pt-4 border-t border-zinc-800 text-xs text-zinc-500">
+          *Data diambil dari transaksi berstatus COMPLETED (Batal tidak dihitung).
+        </div>
+      </div>
+    </div>
+
+    <!-- TABEL TRANSAKSI -->
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+      <h3 class="font-bold text-white text-sm mb-4">Log Transaksi</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm text-zinc-300">
+          <thead class="bg-zinc-950 text-zinc-400 uppercase text-xs border-b border-zinc-800">
+            <tr>
+              <th class="p-4">Waktu</th>
+              <th class="p-4">Kasir</th>
+              <th class="p-4">Metode</th>
+              <th class="p-4 text-right">Total</th>
+              <th class="p-4 text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody id="transaction-rows" class="divide-y divide-zinc-800/60">
+            <tr><td colspan="5" class="text-center py-8">Memuat data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module">
+    import { sql } from "./neon-config.js";
+
+    let allOrders = [];
+    let chartInstance = null;
+
+    // Set default tanggal hari ini di kalender
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('filter-date').value = today;
+
+    async function loadData() {
+      try {
+        // Ambil semua transaksi
+        allOrders = await sql`SELECT * FROM orders WHERE status = 'COMPLETED' ORDER BY created_at DESC`;
+        // Ambil semua item untuk cari terlaris
+        const allItems = await sql`SELECT product_name, qty FROM order_items`;
+
+        calculateStats();
+        renderTable();
+        initChart();
+        calculateBestSeller(allItems);
+      } catch (err) {
+        console.error(err);
+        document.getElementById('transaction-rows').innerHTML = `<tr><td colspan="5" class="text-center py-8 text-red-500">Gagal memuat data: ${err.message}</td></tr>`;
+      }
+    }
+
+    function calculateStats() {
+      const selectedDateStr = document.getElementById('filter-date').value;
+      if (!selectedDateStr) return;
+
+      const selectedDate = new Date(selectedDateStr);
+      selectedDate.setHours(0,0,0,0);
+
+      const now = new Date();
+      
+      // Awal Minggu (Senin)
+      const startOfWeek = new Date(now);
+      const day = startOfWeek.getDay() || 7; 
+      if(day !== 1) startOfWeek.setHours(-24 * (day - 1));
+      startOfWeek.setHours(0,0,0,0);
+
+      let dailyRev = 0, dailyTrx = 0;
+      let weeklyRev = 0;
+      let monthlyRev = 0;
+
+      allOrders.forEach(o => {
+        const d = new Date(o.created_at);
+        const amt = parseFloat(o.total_amount) || 0;
+
+        // Harian (Sesuai kalender yang dipilih)
+        if (d.toDateString() === selectedDate.toDateString()) {
+          dailyRev += amt;
+          dailyTrx++;
+        }
+
+        // Mingguan (Pekan berjalan saat ini)
+        if (d >= startOfWeek && d <= now) {
+          weeklyRev += amt;
+        }
+
+        // Bulanan (Bulan berjalan saat ini)
+        if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+          monthlyRev += amt;
+        }
+      });
+
+      document.getElementById('stat-daily').innerText = 'Rp ' + dailyRev.toLocaleString('id-ID');
+      document.getElementById('stat-weekly').innerText = 'Rp ' + weeklyRev.toLocaleString('id-ID');
+      document.getElementById('stat-monthly').innerText = 'Rp ' + monthlyRev.toLocaleString('id-ID');
+      
+      // Insight
+      const avg = dailyTrx > 0 ? Math.round(dailyRev / dailyTrx) : 0;
+      document.getElementById('insight-avg').innerText = 'Rp ' + avg.toLocaleString('id-ID');
+      document.getElementById('insight-trx').innerText = dailyTrx + ' Trx';
+    }
+
+    function renderTable() {
+      const selectedDateStr = document.getElementById('filter-date').value;
+      const selectedDate = new Date(selectedDateStr);
+      selectedDate.setHours(0,0,0,0);
+
+      const tbody = document.getElementById('transaction-rows');
+      const filteredOrders = allOrders.filter(o => {
+        const d = new Date(o.created_at);
+        return d.toDateString() === selectedDate.toDateString();
+      });
+
+      tbody.innerHTML = '';
+      if (!filteredOrders.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-zinc-500">Tidak ada transaksi di tanggal ini.</td></tr>';
+        return;
+      }
+
+      filteredOrders.forEach(o => {
+        const date = new Date(o.created_at).toLocaleTimeString('id-ID');
+        const isCash = o.payment_method === 'CASH';
+        
+        const methodBadge = isCash 
+          ? '<span class="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-lg text-xs font-bold border border-emerald-500/30">CASH</span>'
+          : '<span class="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-lg text-xs font-bold border border-blue-500/30">QRIS</span>';
+
+        tbody.innerHTML += `
+          <tr class="hover:bg-zinc-800/40 transition">
+            <td class="p-4 font-mono text-xs text-zinc-400">${date}</td>
+            <td class="p-4 font-bold text-white">${o.cashier_name}</td>
+            <td class="p-4">${methodBadge}</td>
+            <td class="p-4 text-right font-black text-red-500">Rp ${parseFloat(o.total_amount).toLocaleString('id-ID')}</td>
+            <td class="p-4 text-center">
+               <span class="text-emerald-400 font-bold text-xs bg-emerald-950/50 px-3 py-1 rounded-lg border border-emerald-900/50">SUKSES</span>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function initChart() {
+      const ctx = document.getElementById('cashFlowChart').getContext('2d');
+      if (chartInstance) chartInstance.destroy();
+
+      const labels = [];
+      const dataValues = [];
+
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        labels.push(d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' }));
+
+        let daySum = 0;
+        allOrders.forEach(o => {
+          const od = new Date(o.created_at);
+          if (od.toDateString() === d.toDateString()) {
+            daySum += parseFloat(o.total_amount) || 0;
+          }
+        });
+        dataValues.push(daySum);
+      }
+
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Pendapatan (Rp)',
+            data: dataValues,
+            backgroundColor: 'rgba(231, 0, 17, 0.6)',
+            borderColor: '#E70011',
+            borderWidth: 1,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#a1a1aa' } },
+            y: { 
+              grid: { color: 'rgba(255,255,255,0.05)' }, 
+              ticks: { 
+                color: '#a1a1aa',
+                callback: function(value) { return 'Rp ' + (value/1000) + 'k'; }
+              } 
+            }
+          }
+        }
+      });
+    }
+
+    function calculateBestSeller(items) {
+      if (!items || items.length === 0) return;
+      
+      const counts = {};
+      items.forEach(item => {
+        counts[item.product_name] = (counts[item.product_name] || 0) + item.qty;
+      });
+
+      let bestItem = '';
+      let maxQty = 0;
+      for (const [name, qty] of Object.entries(counts)) {
+        if (qty > maxQty) {
+          maxQty = qty;
+          bestItem = name;
+        }
+      }
+
+      document.getElementById('insight-best-seller').innerText = `${bestItem} (${maxQty} porsi)`;
+    }
+
+    // Event Listener jika kalender diganti
+    document.getElementById('filter-date').addEventListener('change', () => {
+      calculateStats();
+      renderTable();
+    });
+
+    // Load pertama kali
+    loadData();
+  </script>
+</body>
+</html>
