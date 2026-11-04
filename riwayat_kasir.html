@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="id" class="dark h-full bg-zinc-950">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Riwayat Kasir - Chicken Fire Mataram</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { brand: { red: '#E70011' } } } } }
+  </script>
+</head>
+<body class="bg-zinc-950 text-zinc-100 font-sans min-h-screen p-4 md:p-6 antialiased">
+
+  <div class="max-w-6xl mx-auto space-y-6">
+    <div class="flex justify-between items-center bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
+      <h1 class="font-black text-xl text-white"><i class="fas fa-history text-red-500 mr-3"></i> RIWAYAT TRANSAKSI</h1>
+      <a href="kasir.html" class="bg-zinc-800 hover:bg-zinc-700 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition border border-zinc-700">&larr; Kembali ke Kasir</a>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="bg-gradient-to-r from-red-900/40 to-zinc-900 border border-red-900/50 rounded-2xl p-6 shadow-lg">
+        <p class="text-sm font-bold text-red-400 uppercase tracking-widest mb-1">Omset Hari Ini</p>
+        <h3 id="stat-today-revenue" class="text-4xl font-black text-white">Rp 0</h3>
+      </div>
+      <div class="bg-gradient-to-r from-emerald-900/40 to-zinc-900 border border-emerald-900/50 rounded-2xl p-6 shadow-lg">
+        <p class="text-sm font-bold text-emerald-400 uppercase tracking-widest mb-1">Omset Bulan Ini</p>
+        <h3 id="stat-month-revenue" class="text-4xl font-black text-white">Rp 0</h3>
+      </div>
+    </div>
+
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm text-zinc-300">
+          <thead class="bg-zinc-950 text-zinc-400 uppercase text-xs border-b border-zinc-800">
+            <tr>
+              <th class="p-4">Waktu</th>
+              <th class="p-4">Kasir</th>
+              <th class="p-4">Customer</th>
+              <th class="p-4">Metode</th>
+              <th class="p-4 text-right">Total</th>
+              <th class="p-4 text-center">Status / Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="transaction-rows" class="divide-y divide-zinc-800/60">
+            <tr><td colspan="6" class="text-center py-8">Memuat data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { sql } from "./neon-config.js";
+
+    async function loadHistory() {
+      const tbody = document.getElementById('transaction-rows');
+      try {
+        const rows = await sql`SELECT * FROM orders ORDER BY created_at DESC LIMIT 50`;
+        
+        const now = new Date();
+        let todayRev = 0;
+        let monthRev = 0;
+
+        rows.forEach(o => {
+          if (o.status === 'CANCELLED') return;
+          const d = new Date(o.created_at);
+          const amt = parseFloat(o.total_amount) || 0;
+
+          if (d.toDateString() === now.toDateString()) todayRev += amt;
+          if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) monthRev += amt;
+        });
+
+        document.getElementById('stat-today-revenue').innerText = 'Rp ' + todayRev.toLocaleString('id-ID');
+        document.getElementById('stat-month-revenue').innerText = 'Rp ' + monthRev.toLocaleString('id-ID');
+
+        tbody.innerHTML = '';
+        if(!rows.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-zinc-500">Belum ada transaksi.</td></tr>';
+            return;
+        }
+
+        rows.forEach(o => {
+          const date = new Date(o.created_at).toLocaleString('id-ID');
+          const isCancelled = o.status === 'CANCELLED';
+          const isCash = o.payment_method === 'CASH';
+          
+          // Badge Metode Pembayaran
+          const methodBadge = isCash 
+            ? '<span class="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-lg text-xs font-bold border border-emerald-500/30">CASH</span>'
+            : '<span class="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-lg text-xs font-bold border border-blue-500/30">QRIS</span>';
+          
+          tbody.innerHTML += `
+            <tr class="hover:bg-zinc-800/40 transition ${isCancelled ? 'opacity-50' : ''}">
+              <td class="p-4 font-mono text-xs text-zinc-400">${date}</td>
+              <td class="p-4 font-bold text-white">${o.cashier_name}</td>
+              <td class="p-4">${o.customer_name}</td>
+              <td class="p-4">${methodBadge}</td>
+              <td class="p-4 text-right font-black ${isCancelled ? 'line-through text-zinc-500' : 'text-red-500'}">Rp ${parseFloat(o.total_amount).toLocaleString('id-ID')}</td>
+              <td class="p-4 text-center">
+                ${isCancelled 
+                  ? '<span class="text-red-400 font-bold text-xs bg-red-950/50 px-3 py-1 rounded-lg border border-red-900/50">BATAL</span>' 
+                  : `<button onclick="cancelOrder(${o.id})" class="bg-zinc-800 hover:bg-red-900 text-zinc-300 hover:text-white border border-zinc-700 px-4 py-1.5 rounded-lg text-xs font-bold transition">Batalkan</button>`}
+              </td>
+            </tr>
+          `;
+        });
+
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-red-500">Error: ${err.message}</td></tr>`;
+      }
+    }
+
+    window.cancelOrder = async (id) => {
+      const reason = prompt("Alasan pembatalan:", "Salah Input");
+      if (!reason) return;
+
+      try {
+        await sql`UPDATE orders SET status = 'CANCELLED', cancel_reason = ${reason} WHERE id = ${id}`;
+        loadHistory();
+      } catch (err) {
+        alert("Gagal membatalkan pesanan.");
+      }
+    };
+
+    loadHistory();
+  </script>
+</body>
+</html>
