@@ -8,6 +8,17 @@ let modalTotal = 0;
 let lastTransactionId = null;
 let currentPayMethod = "CASH";
 
+// === STATE KONFIGURASI PRINTER ===
+let printerConfig = JSON.parse(localStorage.getItem('cfm_printer_cfg')) || {
+  storeName: "CHICKEN FIRE MATARAM",
+  storePhone: "0812-3456-7890",
+  storeAddress: "Karanganyar - Jawa Tengah",
+  storeFooter: "Terima Kasih! Nikmati Pedasnya Chicken Fire!",
+  printKitchen: "rawbt",
+  printBar: "rawbt"
+};
+
+// === LOGIN KASIR ===
 document.getElementById('login-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const u = document.getElementById('login-user').value.trim();
@@ -35,6 +46,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
   }
 });
 
+// === LOAD PRODUK ===
 async function loadProducts() {
   const grid = document.getElementById('product-grid');
   try {
@@ -69,6 +81,7 @@ function renderProducts() {
   });
 }
 
+// === KATEGORI ===
 document.querySelectorAll('#cat-tabs button').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('#cat-tabs button').forEach(b => b.className = "cat-btn bg-zinc-900 text-zinc-400 border border-zinc-800 font-bold px-4 py-2 rounded-lg text-sm");
@@ -78,6 +91,7 @@ document.querySelectorAll('#cat-tabs button').forEach(btn => {
   });
 });
 
+// === CART ===
 function addToCart(prod, finalPrice) {
   const existing = cart.find(i => i.id === prod.id);
   if (existing) existing.qty += 1;
@@ -130,6 +144,7 @@ function renderCart() {
 
 document.getElementById('clear-cart-btn').addEventListener('click', () => { if(confirm("Hapus semua?")) { cart = []; renderCart(); } });
 
+// === PEMBAYARAN ===
 const payModal = document.getElementById('pay-modal');
 const payModalAmount = document.getElementById('pay-modal-amount');
 const printModal = document.getElementById('print-modal');
@@ -179,9 +194,6 @@ window.setQuickCash = (amt) => {
   payModalAmount.dispatchEvent(new Event('input'));
 };
 
-// ==========================================
-// PERBAIKAN: MEMISAHKAN SIMPAN DB DAN CETAK
-// ==========================================
 document.getElementById('pay-modal-confirm').addEventListener('click', async () => {
   const pay = currentPayMethod === 'QRIS' ? modalTotal : (parseFloat(payModalAmount.value) || 0);
   if (pay < modalTotal) return alert('Uang kurang!');
@@ -200,7 +212,6 @@ document.getElementById('pay-modal-confirm').addEventListener('click', async () 
                 VALUES (${lastTransactionId}, ${item.name}, ${item.qty}, ${item.finalPrice}, 0, ${item.itemNote || ''}, ${item.category})`;
     }
 
-    // Jika berhasil simpan, TUTUP modal bayar, BUKA modal cetak.
     payModal.classList.add('hidden');
     printModal.classList.remove('hidden');
     
@@ -210,15 +221,45 @@ document.getElementById('pay-modal-confirm').addEventListener('click', async () 
   }
 });
 
-// ==========================================
-// PERBAIKAN: FUNGSI CETAK ANTI-ERROR
-// ==========================================
+// === PENGATURAN PRINTER ===
+document.getElementById('open-printer-settings-btn').addEventListener('click', () => {
+  document.getElementById('cfg-store-name').value = printerConfig.storeName;
+  document.getElementById('cfg-store-phone').value = printerConfig.storePhone;
+  document.getElementById('cfg-store-address').value = printerConfig.storeAddress;
+  document.getElementById('cfg-store-footer').value = printerConfig.storeFooter;
+  document.getElementById('cfg-print-kitchen').value = printerConfig.printKitchen;
+  document.getElementById('cfg-print-bar').value = printerConfig.printBar;
+  document.getElementById('printer-modal').classList.remove('hidden');
+});
+
+document.getElementById('close-printer-modal-btn').addEventListener('click', () => {
+  document.getElementById('printer-modal').classList.add('hidden');
+});
+
+document.getElementById('save-printer-settings-btn').addEventListener('click', () => {
+  printerConfig = {
+    storeName: document.getElementById('cfg-store-name').value.trim() || "CHICKEN FIRE MATARAM",
+    storePhone: document.getElementById('cfg-store-phone').value.trim(),
+    storeAddress: document.getElementById('cfg-store-address').value.trim(),
+    storeFooter: document.getElementById('cfg-store-footer').value.trim(),
+    printKitchen: document.getElementById('cfg-print-kitchen').value,
+    printBar: document.getElementById('cfg-print-bar').value
+  };
+  localStorage.setItem('cfm_printer_cfg', JSON.stringify(printerConfig));
+  alert("Pengaturan Printer Berhasil Disimpan!");
+  document.getElementById('printer-modal').classList.add('hidden');
+});
+
+// === FUNGSI CETAK (DENGAN PILIHAN RAWBT / BROWSER) ===
 function printReceipt(type) {
   const cust = document.getElementById('customer-select').value || "Pelanggan Umum";
   const tbl = document.getElementById('table-no').value || "-";
   const now = new Date().toLocaleString('id-ID');
   
-  let printText = `CHICKEN FIRE MATARAM\n`;
+  let printText = `${printerConfig.storeName}\n`;
+  printText += `${printerConfig.storeAddress}\n`;
+  printText += `Telp: ${printerConfig.storePhone}\n`;
+  printText += `--------------------------------\n`;
   printText += `--- ${type === 'kitchen' ? 'SLIP DAPUR (MAKANAN)' : 'SLIP BAR (MINUMAN)'} ---\n`;
   printText += `ID: #${lastTransactionId}\nWaktu: ${now}\nKasir: ${activeCashierName}\nCust: ${cust} (${tbl})\n`;
   printText += `--------------------------------\n`;
@@ -234,24 +275,15 @@ function printReceipt(type) {
     printText += `${i.qty}x ${i.name}\n`;
     if(i.itemNote) printText += `   *Catatan: ${i.itemNote}\n`;
   });
-  printText += `--------------------------------\n\n\n`;
+  printText += `--------------------------------\n`;
+  printText += `${printerConfig.storeFooter}\n\n\n`;
 
-  // Coba jalankan RawBT, jika error di PC/Web, tangkap error agar tidak merusak UI.
-  try {
+  const printMethod = type === 'kitchen' ? printerConfig.printKitchen : printerConfig.printBar;
+
+  if (printMethod === 'rawbt') {
+    // Cetak via RawBT (Android)
     window.location.href = "intent:" + encodeURIComponent(printText) + "#Intent;scheme=rawbt;package=ru.a404m.rawbt;end;";
-  } catch (e) {
-    console.warn("RawBT intent gagal dieksekusi (Mungkin bukan di Android).", e);
-    alert("Struk berhasil diproses, tapi aplikasi RawBT tidak ditemukan di perangkat ini.");
-  }
-}
-
-document.getElementById('print-kitchen-btn').addEventListener('click', () => printReceipt('kitchen'));
-document.getElementById('print-drink-btn').addEventListener('click', () => printReceipt('drink'));
-
-document.getElementById('close-print-modal-btn').addEventListener('click', () => {
-  cart = []; 
-  renderCart();
-  printModal.classList.add('hidden');
-  document.getElementById('table-no').value = '';
-  document.getElementById('customer-select').value = 'Pelanggan Umum';
-});
+  } else {
+    // Cetak via Browser (PC/Laptop)
+    const printWindow = window.open('', '', 'width=400,height=600');
+    printWindow.document.write('<pre style="font-family: monospace; font-size: 12px; white-space: pre-wrap; padding: 10px;">' + printText + '</
