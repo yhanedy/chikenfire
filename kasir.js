@@ -111,7 +111,6 @@ function renderCart() {
         <span class="font-bold text-white text-sm w-6 text-center">${item.qty}</span>
         <button class="btn-plus w-7 h-7 bg-red-600 text-white font-bold rounded-lg" data-index="${index}">+</button>
       </div>
-      <!-- KOLOM CATATAN -->
       <input type="text" placeholder="Catatan (cth: Pedas, Tanpa Es)..." value="${item.itemNote || ''}" data-index="${index}" class="note-input w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1.5 text-sm text-amber-300 focus:outline-none focus:border-amber-600">
     `;
     container.appendChild(div);
@@ -180,6 +179,9 @@ window.setQuickCash = (amt) => {
   payModalAmount.dispatchEvent(new Event('input'));
 };
 
+// ==========================================
+// PERBAIKAN: MEMISAHKAN SIMPAN DB DAN CETAK
+// ==========================================
 document.getElementById('pay-modal-confirm').addEventListener('click', async () => {
   const pay = currentPayMethod === 'QRIS' ? modalTotal : (parseFloat(payModalAmount.value) || 0);
   if (pay < modalTotal) return alert('Uang kurang!');
@@ -198,15 +200,19 @@ document.getElementById('pay-modal-confirm').addEventListener('click', async () 
                 VALUES (${lastTransactionId}, ${item.name}, ${item.qty}, ${item.finalPrice}, 0, ${item.itemNote || ''}, ${item.category})`;
     }
 
+    // Jika berhasil simpan, TUTUP modal bayar, BUKA modal cetak.
     payModal.classList.add('hidden');
     printModal.classList.remove('hidden');
     
   } catch (err) { 
-    console.error(err);
-    alert("Gagal simpan ke DB."); 
+    console.error("Error Database:", err);
+    alert("Gagal simpan ke DB. Cek koneksi internet atau konsol browser."); 
   }
 });
 
+// ==========================================
+// PERBAIKAN: FUNGSI CETAK ANTI-ERROR
+// ==========================================
 function printReceipt(type) {
   const cust = document.getElementById('customer-select').value || "Pelanggan Umum";
   const tbl = document.getElementById('table-no').value || "-";
@@ -230,7 +236,13 @@ function printReceipt(type) {
   });
   printText += `--------------------------------\n\n\n`;
 
-  window.location.href = "intent:" + encodeURIComponent(printText) + "#Intent;scheme=rawbt;package=ru.a404m.rawbt;end;";
+  // Coba jalankan RawBT, jika error di PC/Web, tangkap error agar tidak merusak UI.
+  try {
+    window.location.href = "intent:" + encodeURIComponent(printText) + "#Intent;scheme=rawbt;package=ru.a404m.rawbt;end;";
+  } catch (e) {
+    console.warn("RawBT intent gagal dieksekusi (Mungkin bukan di Android).", e);
+    alert("Struk berhasil diproses, tapi aplikasi RawBT tidak ditemukan di perangkat ini.");
+  }
 }
 
 document.getElementById('print-kitchen-btn').addEventListener('click', () => printReceipt('kitchen'));
