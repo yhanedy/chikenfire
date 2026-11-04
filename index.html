@@ -1,564 +1,473 @@
-import { sql } from "./neon-config.js";
+<!DOCTYPE html>
+<html lang="id" class="dark h-full bg-zinc-950">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chicken Fire Mataram - POS</title>
 
-/* =====================================================
-   STATE
-===================================================== */
-let cart = [];
-let lastSavedCart = [];
-let lastSavedCustomer = "Pelanggan Umum";
-let lastSavedTable = "-";
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-let allProducts = [];
-let allCashiers = [];
-let currentCategory = "semua";
-let activeCashierName = "";
-let adminMasterPassword = "1234";
-
-let modalPayMethod = 'CASH';
-let modalTotal = 0;
-
-/* =====================================================
-   PRINTER CONFIG
-===================================================== */
-let printerConfig = JSON.parse(localStorage.getItem('cfm_printer_cfg')) || {
-  storeName: "CHICKEN FIRE MATARAM",
-  storePhone: "0812-3456-7890",
-  storeAddress: "Karanganyar - Jawa Tengah",
-  storeFooter: "Terima Kasih! Nikmati Pedasnya Chicken Fire!",
-  taxPercent: 0,
-  custPaper: "58mm",
-  kitchenPaper: "58mm",
-  printMethod: "rawbt"
-};
-
-/* =====================================================
-   PRINTER MODAL SETTINGS
-===================================================== */
-document.getElementById('open-printer-settings-btn').addEventListener('click', () => {
-  document.getElementById('cfg-store-name').value = printerConfig.storeName;
-  document.getElementById('cfg-store-phone').value = printerConfig.storePhone;
-  document.getElementById('cfg-store-address').value = printerConfig.storeAddress;
-  document.getElementById('cfg-store-footer').value = printerConfig.storeFooter;
-  document.getElementById('cfg-tax-percent').value = printerConfig.taxPercent;
-  document.getElementById('cfg-cust-paper').value = printerConfig.custPaper;
-  document.getElementById('cfg-kitchen-paper').value = printerConfig.kitchenPaper;
-  document.getElementById('printer-modal').classList.remove('hidden');
-});
-
-document.getElementById('close-printer-modal-btn').addEventListener('click', () => {
-  document.getElementById('printer-modal').classList.add('hidden');
-});
-
-document.getElementById('save-printer-settings-btn').addEventListener('click', () => {
-  printerConfig = {
-    storeName: document.getElementById('cfg-store-name').value.trim() || "CHICKEN FIRE MATARAM",
-    storePhone: document.getElementById('cfg-store-phone').value.trim(),
-    storeAddress: document.getElementById('cfg-store-address').value.trim(),
-    storeFooter: document.getElementById('cfg-store-footer').value.trim(),
-    taxPercent: parseFloat(document.getElementById('cfg-tax-percent').value) || 0,
-    custPaper: document.getElementById('cfg-cust-paper').value,
-    kitchenPaper: document.getElementById('cfg-kitchen-paper').value,
-    printMethod: "rawbt"
-  };
-  localStorage.setItem('cfm_printer_cfg', JSON.stringify(printerConfig));
-  alert("Pengaturan Printer Thermal Berhasil Disimpan!");
-  document.getElementById('printer-modal').classList.add('hidden');
-});
-
-window.testPrint = (type) => {
-  const dummyCart = [
-    { name: "Ayam Fire Level 3", qty: 2, finalPrice: 20000, discAmount: 0, itemNote: "Ekstra Pedas", category: "makanan" },
-    { name: "Es Teh Manis", qty: 2, finalPrice: 5000, discAmount: 0, itemNote: "Manis Sedang", category: "minuman" }
-  ];
-  executePrint(type, "TEST", "Pelanggan Tes", "Meja 01", dummyCart, 50000, 50000, 0, "CASH");
-};
-
-/* =====================================================
-   LOGIN & AUTH
-===================================================== */
-document.getElementById('login-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
-
-  const role = document.getElementById('login-role').value;
-  const u = document.getElementById('login-user').value.trim();
-  const p = document.getElementById('login-pass').value.trim();
-  const adminView = document.getElementById('admin-view');
-  const kasirView = document.getElementById('kasir-view');
-  const userDisplay = document.getElementById('current-user-display');
-  const errorMsg = document.getElementById('login-error');
-
-  if (role === 'admin') {
-    if (u === 'admin' && p === adminMasterPassword) {
-      document.getElementById('login-modal').classList.add('hidden');
-      adminView.classList.remove('hidden');
-      kasirView.classList.add('hidden');
-      userDisplay.innerText = "Admin System";
-      errorMsg.classList.add('hidden');
-      loadAdminProducts();
-      loadCashiers();
-    } else {
-      errorMsg.classList.remove('hidden');
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: { brand: { red: '#E70011', hover: '#C0000E' } },
+          animation: {
+            'glow-pulse': 'glow-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'slide-up': 'slide-up 0.3s ease-out forwards',
+          },
+          keyframes: {
+            'glow-pulse': {
+              '0%, 100%': { boxShadow: '0 0 15px rgba(231, 0, 17, 0.3)' },
+              '50%': { boxShadow: '0 0 30px rgba(231, 0, 17, 0.7)' },
+            },
+            'slide-up': {
+              '0%': { transform: 'translateY(20px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            }
+          }
+        }
+      }
     }
-  } else if (role === 'kasir') {
-    try {
-      const rows = await sql`SELECT * FROM cashiers ORDER BY created_at DESC`;
-      allCashiers = rows || [];
-    } catch (err) { allCashiers = []; }
+  </script>
 
-    const match = allCashiers.find(c => c.username === u && c.password === p);
-    const isDefault = (u === 'kasir' && p === 'kasir123');
-
-    if (match || isDefault) {
-      activeCashierName = match ? match.name : "Kasir Siswa";
-      document.getElementById('login-modal').classList.add('hidden');
-      kasirView.classList.remove('hidden');
-      adminView.classList.add('hidden');
-      userDisplay.innerText = activeCashierName;
-      errorMsg.classList.add('hidden');
-      await loadProducts();
-    } else {
-      errorMsg.classList.remove('hidden');
+  <style>
+    html, body { height: 100%; margin: 0; padding: 0; background-color: #09090b !important; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #09090b; }
+    ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+    
+    .glass-panel {
+      background: rgba(24, 24, 27, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
     }
-  }
-});
+  </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 font-sans min-h-screen h-full flex flex-col overflow-hidden antialiased selection:bg-red-500 selection:text-white">
 
-document.getElementById('logout-btn').addEventListener('click', () => {
-  document.getElementById('login-modal').classList.remove('hidden');
-  document.getElementById('login-form').reset();
-  document.getElementById('login-error').classList.add('hidden');
-  document.getElementById('admin-view').classList.add('hidden');
-  document.getElementById('kasir-view').classList.add('hidden');
-  cart = [];
-  lastSavedCart = [];
-  renderCart();
-});
+  <!-- MODAL LOGIN -->
+  <div id="login-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-50 p-4 transition-opacity duration-300">
+    <div class="relative glass-panel rounded-3xl shadow-2xl w-full max-w-md overflow-hidden group border-zinc-700">
+      <div class="absolute inset-0 z-0">
+        <div class="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/90 to-transparent"></div>
+      </div>
 
-/* =====================================================
-   ADMIN FEATURES
-===================================================== */
-document.getElementById('add-cashier-form')?.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const name = document.getElementById('cashier-name-input').value.trim();
-  const username = document.getElementById('cashier-user-input').value.trim();
-  const password = document.getElementById('cashier-pass-input').value.trim();
-  try {
-    await sql`INSERT INTO cashiers (name, username, password) VALUES (${name}, ${username}, ${password})`;
-    alert("Kasir berhasil ditambahkan!");
-    document.getElementById('add-cashier-form').reset();
-    loadCashiers();
-  } catch (err) { alert("Gagal menambah kasir. Username mungkin sudah dipakai."); }
-});
+      <div class="relative z-10 p-6 text-center flex flex-col items-center border-b border-zinc-800/60">
+        <h2 class="text-xl font-black text-white uppercase tracking-wider">CHICKEN FIRE MATARAM</h2>
+        <p class="text-[11px] text-zinc-400 font-semibold bg-zinc-950/60 px-3 py-0.5 rounded-full border border-zinc-800/80 mt-1">Karanganyar - Jawa Tengah</p>
+      </div>
 
-async function loadCashiers() {
-  const container = document.getElementById('cashier-list-admin');
-  if (!container) return;
-  container.innerHTML = '';
-  try {
-    const rows = await sql`SELECT * FROM cashiers ORDER BY created_at DESC`;
-    allCashiers = rows || [];
-    if (!rows.length) return container.innerHTML = '<p class="text-[10px] text-zinc-500">Belum ada kasir terdaftar.</p>';
-    rows.forEach((c) => {
-      const div = document.createElement('div');
-      div.className = "flex justify-between items-center bg-zinc-950 border border-zinc-800 p-1.5 rounded text-xs";
-      div.innerHTML = `
-        <div><span class="font-bold text-zinc-200">${c.name}</span> <span class="text-[9px] text-zinc-500">(${c.username})</span></div>
-        <button data-id="${c.id}" class="btn-del-cashier bg-red-950 text-red-400 border border-red-800 px-2 py-0.5 rounded text-[9px]">Hapus</button>
-      `;
-      container.appendChild(div);
-    });
-    container.querySelectorAll('.btn-del-cashier').forEach(btn => {
-      btn.addEventListener('click', () => window.removeCashier(btn.dataset.id));
-    });
-  } catch (err) { console.error(err); }
-}
-
-window.removeCashier = async (id) => {
-  if (confirm("Hapus akun kasir ini?")) {
-    await sql`DELETE FROM cashiers WHERE id = ${id}`;
-    loadCashiers();
-  }
-};
-
-document.getElementById('change-admin-pass-form')?.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const newPass = document.getElementById('new-admin-pass').value.trim();
-  if (newPass) {
-    adminMasterPassword = newPass;
-    alert("Password Admin diperbarui!");
-    document.getElementById('change-admin-pass-form').reset();
-  }
-});
-
-document.getElementById('add-product-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const btn = document.getElementById('save-product-btn');
-  btn.innerText = "Memproses..."; btn.disabled = true;
-  try {
-    const name = document.getElementById('prod-name').value.trim();
-    const category = document.getElementById('prod-category').value;
-    const price = parseFloat(document.getElementById('prod-price').value) || 0;
-    const discountType = document.getElementById('prod-discount-type').value;
-    const discountValue = parseFloat(document.getElementById('prod-discount-value').value) || 0;
-    const file = document.getElementById('prod-image-file').files[0];
-    let imageUrl = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300";
-    if (file) imageUrl = await compressAndReadImage(file);
-
-    await sql`
-      INSERT INTO products (name, category, price, discount_type, discount_value, image_url)
-      VALUES (${name}, ${category}, ${price}, ${discountType}, ${discountValue}, ${imageUrl})
-    `;
-    alert("Menu berhasil disimpan!");
-    document.getElementById('add-product-form').reset();
-    loadAdminProducts();
-  } catch (err) { alert("Gagal menyimpan menu."); }
-  finally { btn.innerText = "Simpan & Upload Menu"; btn.disabled = false; }
-});
-
-function compressAndReadImage(file) {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (e) => {
-      const img = new Image();
-      img.src = e.target.result;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const maxWidth = 300;
-        const scale = Math.min(1, maxWidth / img.width);
-        canvas.width = Math.round(img.width * scale);
-        canvas.height = Math.round(img.height * scale);
-        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL('image/jpeg', 0.7));
-      };
-      img.onerror = () => resolve("https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300");
-    };
-  });
-}
-
-async function loadAdminProducts() {
-  const container = document.getElementById('admin-menu-list');
-  if (!container) return;
-  try {
-    const rows = await sql`SELECT * FROM products ORDER BY created_at DESC`;
-    container.innerHTML = '';
-    if (!rows.length) return container.innerHTML = '<p class="text-[10px] text-zinc-500">Belum ada menu.</p>';
-    rows.forEach((p) => {
-      const div = document.createElement('div');
-      div.className = "flex items-center justify-between border border-zinc-800 p-2 rounded bg-zinc-950 text-xs";
-      div.innerHTML = `
-        <div class="flex items-center space-x-2">
-          <img src="${p.image_url}" class="w-10 h-10 object-cover rounded">
-          <div><h5 class="font-bold text-zinc-200">${p.name}</h5><p class="text-zinc-400 text-[10px]">Rp ${parseFloat(p.price).toLocaleString('id-ID')}</p></div>
+      <form id="login-form" class="relative z-10 p-6 space-y-4">
+        <div>
+          <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1"><i class="fas fa-user-shield text-red-500 mr-1.5"></i> PERAN</label>
+          <select id="login-role" class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl p-2.5 text-xs text-zinc-100 font-semibold focus:outline-none focus:border-red-600">
+            <option value="kasir">Kasir (Petugas Siswa)</option>
+            <option value="admin">Admin System</option>
+          </select>
         </div>
-        <button data-id="${p.id}" class="btn-del-prod bg-red-950 text-red-400 border border-red-800 px-2 py-1 rounded text-[10px]">Delete</button>
-      `;
-      container.appendChild(div);
-    });
-    container.querySelectorAll('.btn-del-prod').forEach(btn => {
-      btn.addEventListener('click', () => window.deleteProduct(btn.dataset.id));
-    });
-  } catch (err) { console.error(err); }
-}
+        <div>
+          <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1"><i class="fas fa-user text-red-500 mr-1.5"></i> USERNAME</label>
+          <input type="text" id="login-user" required placeholder="Masukkan username" class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-red-600">
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1"><i class="fas fa-lock text-red-500 mr-1.5"></i> PASSWORD</label>
+          <input type="password" id="login-pass" required placeholder="••••••••" class="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-red-600">
+        </div>
+        <p id="login-error" class="text-xs text-red-400 font-medium hidden text-center bg-red-950/40 border border-red-900/50 p-2 rounded-lg"><i class="fas fa-exclamation-circle mr-1.5"></i> Username atau password salah.</p>
+        <button type="submit" class="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-extrabold py-3 rounded-xl transition text-xs uppercase tracking-wider shadow-lg shadow-red-600/30 flex items-center justify-center space-x-2">
+          <i class="fas fa-expand text-sm"></i><span>Masuk Sistem</span>
+        </button>
+      </form>
+    </div>
+  </div>
 
-window.deleteProduct = async (id) => {
-  if (confirm("Hapus menu ini?")) {
-    await sql`DELETE FROM products WHERE id = ${id}`;
-    loadAdminProducts();
-  }
-};
-
-/* =====================================================
-   KASIR KATALOG & CART
-===================================================== */
-async function loadProducts() {
-  const grid = document.getElementById('product-grid');
-  if (!grid) return;
-  try {
-    const rows = await sql`SELECT * FROM products ORDER BY id DESC`;
-    allProducts = (rows || []).map(p => ({
-      id: p.id, name: p.name, category: p.category,
-      price: parseFloat(p.price) || 0, discountType: p.discount_type,
-      discountValue: parseFloat(p.discount_value) || 0, imageUrl: p.image_url
-    }));
-    renderProducts();
-  } catch (err) {
-    grid.innerHTML = '<p class="text-xs text-red-400 col-span-4 text-center py-10">Gagal memuat produk.</p>';
-  }
-}
-
-function renderProducts() {
-  const grid = document.getElementById('product-grid');
-  if (!grid) return;
-  grid.innerHTML = '';
-  const filtered = allProducts.filter(p => currentCategory === 'semua' || p.category === currentCategory);
-  if (!filtered.length) return grid.innerHTML = '<p class="text-xs text-zinc-500 col-span-4 text-center py-10">Tidak ada produk.</p>';
-
-  filtered.forEach(p => {
-    let finalPrice = p.price;
-    if (p.discountType === 'percent') finalPrice -= (p.price * (p.discountValue / 100));
-    else if (p.discountType === 'nominal') finalPrice -= p.discountValue;
-    if (finalPrice < 0) finalPrice = 0;
-
-    const card = document.createElement('div');
-    card.className = "product-card bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden cursor-pointer hover:border-red-600 p-2 transition-all";
-    card.dataset.id = p.id;
-    card.innerHTML = `
-      <img src="${p.imageUrl}" class="w-full h-20 object-cover rounded-lg mb-1.5">
-      <h4 class="font-bold text-zinc-100 text-[11px] truncate">${p.name}</h4>
-      <p class="text-red-500 font-black text-[11px]">Rp ${finalPrice.toLocaleString('id-ID')}</p>
-    `;
-    card.addEventListener('click', () => addToCart(p));
-    grid.appendChild(card);
-  });
-}
-
-document.querySelectorAll('#cat-tabs button').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('#cat-tabs button').forEach(b => {
-      b.className = "cat-btn bg-zinc-900 text-zinc-400 border border-zinc-800 font-bold px-3 py-1 rounded-lg text-xs hover:bg-zinc-800 transition";
-    });
-    btn.className = "cat-btn bg-red-600 text-white font-bold px-3 py-1 rounded-lg text-xs shadow transition";
-    currentCategory = btn.dataset.cat;
-    renderProducts();
-  });
-});
-
-function addToCart(prod) {
-  let finalPrice = prod.price, discAmount = 0;
-  if (prod.discountType === 'percent') { discAmount = prod.price * (prod.discountValue / 100); finalPrice -= discAmount; }
-  else if (prod.discountType === 'nominal') { discAmount = prod.discountValue; finalPrice -= discAmount; }
-  if (finalPrice < 0) finalPrice = 0;
-
-  const existing = cart.find(i => i.id === prod.id);
-  if (existing) existing.qty += 1;
-  else cart.push({ ...prod, finalPrice, discAmount, qty: 1, itemNote: "" });
-  renderCart();
-}
-
-function renderCart() {
-  const container = document.getElementById('cart-items');
-  if (!container) return;
-  container.innerHTML = '';
-  let total = 0;
-
-  if (cart.length === 0) {
-    container.innerHTML = '<p class="text-xs text-zinc-500 text-center py-6">Keranjang kosong</p>';
-    document.getElementById('cart-total').innerText = 'Rp 0';
-    return;
-  }
-
-  cart.forEach((item, index) => {
-    const subtotal = item.finalPrice * item.qty;
-    total += subtotal;
-    const div = document.createElement('div');
-    div.className = "bg-zinc-950 border border-zinc-800 p-2 rounded space-y-1 text-xs";
-    div.innerHTML = `
-      <div class="flex justify-between">
-        <span class="font-bold text-zinc-100 truncate">${item.name}</span>
-        <span class="font-black text-red-500">Rp ${subtotal.toLocaleString('id-ID')}</span>
+  <!-- HEADER -->
+  <header class="bg-zinc-900 border-b border-zinc-800 px-4 py-2 flex items-center justify-between flex-shrink-0 z-40">
+    <div class="flex items-center space-x-3">
+      <div>
+        <h1 class="font-black text-xs tracking-wide text-white leading-none">CHICKEN FIRE MATARAM</h1>
+        <span class="text-[9px] text-zinc-400 font-medium">Karanganyar - Jawa Tengah</span>
       </div>
-      <div class="flex items-center space-x-1.5">
-        <button class="btn-minus w-5 h-5 bg-zinc-800 text-red-400 font-bold rounded" data-index="${index}">-</button>
-        <span class="font-bold text-white text-[10px] min-w-[16px] text-center">${item.qty}</span>
-        <button class="btn-plus w-5 h-5 bg-red-600 text-white font-bold rounded" data-index="${index}">+</button>
-        <input type="text" placeholder="Catatan..." value="${item.itemNote || ''}" data-index="${index}" class="note-input flex-1 bg-zinc-900 border border-zinc-800 rounded px-1.5 text-[10px] text-amber-200">
+    </div>
+
+    <div class="flex items-center space-x-2">
+      <span id="current-user-display" class="bg-zinc-950 text-zinc-300 text-[10px] font-semibold px-2 py-1 rounded border border-zinc-800">Kasir</span>
+      <button id="open-printer-settings-btn" class="bg-zinc-800 hover:bg-zinc-700 text-amber-400 px-2.5 py-1 rounded text-[10px] border border-zinc-700 font-bold flex items-center"><i class="fas fa-print mr-1"></i> Setup</button>
+      <button onclick="toggleFullScreen()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-2 py-1 rounded text-[10px] border border-zinc-700"><i class="fas fa-expand"></i></button>
+      
+      <!-- Gunakan target _self agar tidak error saat kembali -->
+      <a href="riwayat.html" target="_self" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-2.5 py-1 rounded text-[10px] border border-zinc-700">Riwayat</a>
+      
+      <button id="logout-btn" class="bg-red-950/80 hover:bg-red-900 text-red-400 px-2.5 py-1 rounded text-[10px] border border-red-800/50">Keluar</button>
+    </div>
+  </header>
+
+  <!-- KASIR VIEW -->
+  <div id="kasir-view" class="flex flex-1 overflow-hidden">
+    <!-- KATALOG -->
+    <div class="w-7/12 md:w-8/12 p-3 flex flex-col h-full bg-zinc-950 border-r border-zinc-800">
+      <div class="flex space-x-1.5 border-b border-zinc-800 mb-2.5 pb-2" id="cat-tabs">
+        <button data-cat="semua" class="cat-btn bg-red-600 text-white font-bold px-3 py-1 rounded-lg text-xs">Semua</button>
+        <button data-cat="makanan" class="cat-btn bg-zinc-900 text-zinc-400 border border-zinc-800 font-bold px-3 py-1 rounded-lg text-xs">Makanan</button>
+        <button data-cat="minuman" class="cat-btn bg-zinc-900 text-zinc-400 border border-zinc-800 font-bold px-3 py-1 rounded-lg text-xs">Minuman</button>
+        <button data-cat="paket" class="cat-btn bg-zinc-900 text-zinc-400 border border-zinc-800 font-bold px-3 py-1 rounded-lg text-xs">Paket</button>
       </div>
-    `;
-    container.appendChild(div);
-  });
+      <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 overflow-y-auto pr-1 pb-6">
+        <p class="text-xs text-zinc-500 col-span-4 text-center py-10">Memuat menu...</p>
+      </div>
+    </div>
 
-  document.getElementById('cart-total').innerText = 'Rp ' + total.toLocaleString('id-ID');
+    <!-- PANEL KANAN -->
+    <div class="w-5/12 md:w-4/12 bg-zinc-900 flex flex-col h-full justify-between border-l border-zinc-800 overflow-hidden">
+      <div class="p-2.5 bg-zinc-900 border-b border-zinc-800 flex-shrink-0">
+        <div class="grid grid-cols-2 gap-1.5">
+          <div>
+            <label class="text-[9px] font-bold text-zinc-400 block mb-0.5">CUSTOMER</label>
+            <input type="text" id="customer-select" value="Pelanggan Umum" class="w-full bg-zinc-950 border border-zinc-800 rounded p-1 text-xs text-zinc-100">
+          </div>
+          <div>
+            <label class="text-[9px] font-bold text-zinc-400 block mb-0.5">NO. MEJA</label>
+            <input type="text" id="table-no" placeholder="Meja / Takeaway" class="w-full bg-zinc-950 border border-zinc-800 rounded p-1 text-xs text-zinc-100">
+          </div>
+        </div>
+      </div>
 
-  container.querySelectorAll('.btn-minus').forEach(b => b.addEventListener('click', () => updateQty(parseInt(b.dataset.index), -1)));
-  container.querySelectorAll('.btn-plus').forEach(b => b.addEventListener('click', () => updateQty(parseInt(b.dataset.index), 1)));
-  container.querySelectorAll('.note-input').forEach(inp => {
-    inp.addEventListener('change', () => {
-      const idx = parseInt(inp.dataset.index);
-      if (cart[idx]) cart[idx].itemNote = inp.value.trim();
+      <div class="p-2 flex-1 overflow-y-auto min-h-0">
+        <div class="flex justify-between items-center border-b border-zinc-800 pb-1 mb-1.5">
+          <h3 class="font-bold text-zinc-300 text-[10px] uppercase">Daftar Pesanan</h3>
+          <button id="clear-cart-btn" class="text-[9px] text-red-400 hover:underline">Hapus Semua</button>
+        </div>
+        <div id="cart-items" class="space-y-1.5"></div>
+      </div>
+
+      <div class="bg-zinc-950 border-t border-zinc-800 p-3 space-y-3 flex-shrink-0">
+        <div class="flex justify-between items-center bg-zinc-900 p-3 rounded-xl border border-zinc-800 shadow-inner">
+          <span class="text-xs font-bold text-zinc-400">TOTAL</span>
+          <span id="cart-total" class="text-xl font-black text-red-500">Rp 0</span>
+        </div>
+        <button id="open-pay-modal-btn" class="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-extrabold py-4 rounded-xl transition shadow-[0_0_20px_rgba(231,0,17,0.4)] text-sm uppercase tracking-wide animate-glow-pulse">
+          <i class="fas fa-cash-register mr-2"></i> Proses Pembayaran
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- POPUP PEMBAYARAN -->
+  <div id="pay-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 hidden">
+    <div class="glass-panel w-full max-w-md rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.8)] border border-zinc-700/50 overflow-hidden transform animate-slide-up">
+      <div class="bg-gradient-to-r from-zinc-900 to-zinc-800 p-4 border-b border-zinc-700/50 flex justify-between items-center relative overflow-hidden">
+        <div class="absolute inset-0 bg-red-600/10 skew-x-12 transform origin-top-left"></div>
+        <h3 class="text-sm font-black text-white tracking-widest uppercase relative z-10"><i class="fas fa-bolt text-red-500 mr-2"></i> Checkout</h3>
+        <button id="close-pay-modal-btn" class="text-zinc-400 hover:text-white transition relative z-10"><i class="fas fa-times text-lg"></i></button>
+      </div>
+
+      <div class="p-5 space-y-4 text-xs relative z-10">
+        <div class="bg-zinc-950/80 border border-zinc-800 rounded-xl p-4 flex justify-between items-center shadow-inner">
+          <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Total Tagihan</span>
+          <span id="pay-modal-total" class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-400">Rp 0</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" id="pay-modal-cash" class="py-2.5 rounded-xl border text-xs font-bold transition duration-200 border-red-600 bg-red-600/20 text-red-400 shadow-[0_0_10px_rgba(231,0,17,0.2)]">CASH</button>
+          <button type="button" id="pay-modal-qris" class="py-2.5 rounded-xl border text-xs font-bold transition duration-200 border-zinc-700 bg-zinc-900 text-zinc-400 hover:border-zinc-500">QRIS</button>
+        </div>
+
+        <div id="pay-modal-cash-group" class="space-y-2 bg-zinc-900/50 p-3 rounded-xl border border-zinc-800">
+          <label class="text-[10px] font-bold text-zinc-400 uppercase block tracking-wider">Uang Diterima</label>
+          <input type="number" id="pay-modal-amount" placeholder="0" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-3 text-lg font-black text-emerald-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition">
+          <div class="grid grid-cols-4 gap-1.5 pt-1">
+            <button type="button" onclick="setQuickCashModal(20000)" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold py-1.5 rounded text-[10px] border border-zinc-700 transition">20K</button>
+            <button type="button" onclick="setQuickCashModal(50000)" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold py-1.5 rounded text-[10px] border border-zinc-700 transition">50K</button>
+            <button type="button" onclick="setQuickCashModal(100000)" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold py-1.5 rounded text-[10px] border border-zinc-700 transition">100K</button>
+            <button type="button" onclick="setQuickCashModal(0)" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold py-1.5 rounded text-[10px] border border-zinc-700 transition">PAS</button>
+          </div>
+        </div>
+
+        <div class="bg-zinc-950/80 border border-zinc-800 rounded-xl p-3 flex justify-between items-center">
+          <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Kembalian</span>
+          <span id="pay-modal-change" class="text-xl font-black text-emerald-400 drop-shadow-[0_0_5px_rgba(52,211,153,0.5)]">Rp 0</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-800/50">
+          <button id="pay-modal-print" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 font-bold py-2.5 rounded-lg text-[11px] transition"><i class="fas fa-print mr-1"></i> Cetak Saja</button>
+          <button id="pay-modal-confirm" class="bg-emerald-600 hover:bg-emerald-500 text-white font-black py-2.5 rounded-lg text-[11px] shadow-[0_0_15px_rgba(5,150,105,0.4)] transition"><i class="fas fa-check mr-1"></i> Simpan & Cetak</button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <button id="print-kitchen-btn" class="bg-zinc-900 hover:bg-zinc-800 text-amber-500 border border-amber-600/30 font-bold py-2 rounded-lg text-[10px] transition"><i class="fas fa-utensils mr-1"></i> Struk Dapur</button>
+          <button id="print-drink-btn" class="bg-zinc-900 hover:bg-zinc-800 text-blue-400 border border-blue-600/30 font-bold py-2 rounded-lg text-[10px] transition"><i class="fas fa-glass-martini-alt mr-1"></i> Struk Bar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRINTER SETTINGS MODAL -->
+  <div id="printer-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 hidden">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+      <div class="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
+        <h3 class="text-sm font-bold text-white flex items-center"><i class="fas fa-print text-amber-500 mr-2"></i> Pengaturan Printer</h3>
+        <button id="close-printer-modal-btn" class="text-zinc-400 hover:text-white text-base"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="p-5 overflow-y-auto space-y-5 text-xs">
+        <div class="bg-zinc-950 p-4 rounded-xl border border-zinc-800 space-y-3">
+          <h4 class="font-bold text-red-500 uppercase tracking-wider text-[11px]">Informasi Struk</h4>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-[10px] font-bold text-zinc-400 block mb-1">Nama Toko</label>
+              <input type="text" id="cfg-store-name" class="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-zinc-100">
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-zinc-400 block mb-1">Telepon</label>
+              <input type="text" id="cfg-store-phone" class="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-zinc-100">
+            </div>
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-zinc-400 block mb-1">Alamat</label>
+            <input type="text" id="cfg-store-address" class="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-zinc-100">
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-zinc-400 block mb-1">Footer</label>
+            <input type="text" id="cfg-store-footer" class="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-zinc-100">
+          </div>
+        </div>
+      </div>
+      <div class="p-4 border-t border-zinc-800 bg-zinc-950 flex justify-end">
+        <button id="save-printer-settings-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold px-5 py-2 rounded-lg text-xs shadow">Simpan Pengaturan</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(err => console.log(err));
+      else if (document.exitFullscreen) document.exitFullscreen();
+    }
+  </script>
+
+  <!-- JAVASCRIPT LOGIC (MENGGUNAKAN ESM CDN AGAR BISA RUN DI GITHUB PAGES) -->
+  <script type="module">
+    import { neon } from "https://esm.sh/@neondatabase/serverless";
+
+    // === KONEKSI DATABASE ===
+    const connectionString = "postgresql://neondb_owner:npg_o3iR4ANwckWh@ep-still-frost-aos4ozvz-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require";
+    const sql = neon(connectionString);
+
+    // === STATE ===
+    let cart = [];
+    let lastSavedCart = [];
+    let lastSavedCustomer = "Pelanggan Umum";
+    let lastSavedTable = "-";
+    let allProducts = [];
+    let allCashiers = [];
+    let currentCategory = "semua";
+    let activeCashierName = "";
+    let adminMasterPassword = "1234";
+    let modalPayMethod = 'CASH';
+    let modalTotal = 0;
+
+    let printerConfig = JSON.parse(localStorage.getItem('cfm_printer_cfg')) || {
+      storeName: "CHICKEN FIRE MATARAM", storePhone: "0812-3456-7890", storeAddress: "Karanganyar - Jawa Tengah", storeFooter: "Terima Kasih!"
+    };
+
+    // === PRINTER SETTINGS ===
+    document.getElementById('open-printer-settings-btn').addEventListener('click', () => {
+      document.getElementById('cfg-store-name').value = printerConfig.storeName;
+      document.getElementById('cfg-store-phone').value = printerConfig.storePhone;
+      document.getElementById('cfg-store-address').value = printerConfig.storeAddress;
+      document.getElementById('cfg-store-footer').value = printerConfig.storeFooter;
+      document.getElementById('printer-modal').classList.remove('hidden');
     });
-  });
-}
+    document.getElementById('close-printer-modal-btn').addEventListener('click', () => document.getElementById('printer-modal').classList.add('hidden'));
+    document.getElementById('save-printer-settings-btn').addEventListener('click', () => {
+      printerConfig = {
+        storeName: document.getElementById('cfg-store-name').value,
+        storePhone: document.getElementById('cfg-store-phone').value,
+        storeAddress: document.getElementById('cfg-store-address').value,
+        storeFooter: document.getElementById('cfg-store-footer').value
+      };
+      localStorage.setItem('cfm_printer_cfg', JSON.stringify(printerConfig));
+      alert("Pengaturan disimpan!");
+      document.getElementById('printer-modal').classList.add('hidden');
+    });
 
-function updateQty(idx, change) {
-  if (!cart[idx]) return;
-  cart[idx].qty += change;
-  if (cart[idx].qty <= 0) cart.splice(idx, 1);
-  renderCart();
-}
+    // === LOGIN ===
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
 
-document.getElementById('clear-cart-btn').addEventListener('click', () => {
-  if (cart.length === 0) return;
-  if (confirm("Hapus semua pesanan dari keranjang?")) { cart = []; renderCart(); }
-});
+      const role = document.getElementById('login-role').value;
+      const u = document.getElementById('login-user').value.trim();
+      const p = document.getElementById('login-pass').value.trim();
+      const errorMsg = document.getElementById('login-error');
 
-/* =====================================================
-   POPUP PEMBAYARAN
-===================================================== */
-const payModal = document.getElementById('pay-modal');
-const payModalAmount = document.getElementById('pay-modal-amount');
-const payModalChange = document.getElementById('pay-modal-change');
+      if (role === 'admin') {
+        if (u === 'admin' && p === adminMasterPassword) {
+          document.getElementById('login-modal').classList.add('hidden');
+          document.getElementById('current-user-display').innerText = "Admin";
+          errorMsg.classList.add('hidden');
+        } else errorMsg.classList.remove('hidden');
+      } else {
+        try {
+          const rows = await sql`SELECT * FROM cashiers ORDER BY created_at DESC`;
+          allCashiers = rows || [];
+        } catch (err) { allCashiers = []; }
 
-function refreshModalTotal() {
-  modalTotal = cart.reduce((s, i) => s + (i.finalPrice * i.qty), 0);
-  document.getElementById('pay-modal-total').innerText = 'Rp ' + modalTotal.toLocaleString('id-ID');
-  calcModalChange();
-}
+        const match = allCashiers.find(c => c.username === u && c.password === p);
+        const isDefault = (u === 'kasir' && p === 'kasir123');
 
-function calcModalChange() {
-  const pay = parseFloat(payModalAmount.value) || 0;
-  const change = pay - modalTotal;
-  payModalChange.innerText = 'Rp ' + (change > 0 ? change.toLocaleString('id-ID') : '0');
-  payModalChange.className = change >= 0
-    ? 'text-xl font-black text-emerald-400 drop-shadow-[0_0_5px_rgba(52,211,153,0.5)]'
-    : 'text-xl font-black text-red-500 drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]';
-}
+        if (match || isDefault) {
+          activeCashierName = match ? match.name : "Kasir Siswa";
+          document.getElementById('login-modal').classList.add('hidden');
+          document.getElementById('current-user-display').innerText = activeCashierName;
+          errorMsg.classList.add('hidden');
+          await loadProducts();
+        } else errorMsg.classList.remove('hidden');
+      }
+    });
 
-window.setQuickCashModal = (amt) => {
-  payModalAmount.value = amt === 0 ? modalTotal : amt;
-  calcModalChange();
-};
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      document.getElementById('login-modal').classList.remove('hidden');
+      document.getElementById('login-form').reset();
+      cart = []; renderCart();
+    });
 
-function setModalPayMethod(m) {
-  modalPayMethod = m;
-  document.getElementById('pay-modal-cash').className = m === 'CASH'
-    ? "py-2.5 rounded-xl border text-xs font-bold transition duration-200 border-red-600 bg-red-600/20 text-red-400 shadow-[0_0_10px_rgba(231,0,17,0.2)]"
-    : "py-2.5 rounded-xl border text-xs font-bold transition duration-200 border-zinc-700 bg-zinc-900 text-zinc-400 hover:border-zinc-500";
-  document.getElementById('pay-modal-qris').className = m === 'QRIS'
-    ? "py-2.5 rounded-xl border text-xs font-bold transition duration-200 border-blue-600 bg-blue-600/20 text-blue-400 shadow-[0_0_10px_rgba(37,99,235,0.2)]"
-    : "py-2.5 rounded-xl border text-xs font-bold transition duration-200 border-zinc-700 bg-zinc-900 text-zinc-400 hover:border-zinc-500";
-
-  const cashGroup = document.getElementById('pay-modal-cash-group');
-  if (m === 'QRIS') {
-    cashGroup.classList.add('opacity-40', 'pointer-events-none');
-    payModalAmount.value = modalTotal;
-    calcModalChange();
-  } else {
-    cashGroup.classList.remove('opacity-40', 'pointer-events-none');
-    payModalAmount.value = '';
-    calcModalChange();
-  }
-}
-
-document.getElementById('open-pay-modal-btn').addEventListener('click', () => {
-  if (cart.length === 0) return alert('Keranjang masih kosong!');
-  refreshModalTotal();
-  payModalAmount.value = '';
-  setModalPayMethod('CASH');
-  payModal.classList.remove('hidden');
-});
-
-document.getElementById('close-pay-modal-btn').addEventListener('click', () => {
-  payModal.classList.add('hidden');
-});
-
-document.getElementById('pay-modal-cash').addEventListener('click', () => setModalPayMethod('CASH'));
-document.getElementById('pay-modal-qris').addEventListener('click', () => setModalPayMethod('QRIS'));
-payModalAmount.addEventListener('input', calcModalChange);
-
-async function saveOrderAndPrint(doPrint = true) {
-  if (cart.length === 0) return alert('Keranjang kosong!');
-  const total = modalTotal;
-  const pay = modalPayMethod === 'QRIS' ? total : (parseFloat(payModalAmount.value) || 0);
-
-  if (modalPayMethod === 'CASH' && pay < total) return alert('Uang pembayaran kurang!');
-
-  const customerName = document.getElementById('customer-select').value || "Pelanggan Umum";
-  const tableNumber = document.getElementById('table-no').value || "-";
-  const confirmBtn = document.getElementById('pay-modal-confirm');
-  const printBtn = document.getElementById('pay-modal-print');
-  const origText = confirmBtn.innerHTML;
-  confirmBtn.disabled = true; printBtn.disabled = true;
-  confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Menyimpan...';
-
-  try {
-    const [newOrder] = await sql`
-      INSERT INTO orders (cashier_name, customer_name, table_number, payment_method, status, total_amount, paid_amount, change_amount)
-      VALUES (${activeCashierName || "Kasir Siswa"}, ${customerName}, ${tableNumber}, ${modalPayMethod}, 'COMPLETED', ${total}, ${pay}, ${pay - total})
-      RETURNING id
-    `;
-
-    for (const item of cart) {
-      await sql`
-        INSERT INTO order_items (order_id, product_name, qty, price, discount_amount, item_note)
-        VALUES (${newOrder.id}, ${item.name}, ${item.qty}, ${item.finalPrice}, ${item.discAmount}, ${item.itemNote || ''})
-      `;
+    // === LOAD PRODUK ===
+    async function loadProducts() {
+      const grid = document.getElementById('product-grid');
+      try {
+        const rows = await sql`SELECT * FROM products ORDER BY id DESC`;
+        allProducts = (rows || []).map(p => ({
+          id: p.id, name: p.name, category: p.category, price: parseFloat(p.price) || 0, discountType: p.discount_type, discountValue: parseFloat(p.discount_value) || 0, imageUrl: p.image_url
+        }));
+        renderProducts();
+      } catch (err) { grid.innerHTML = '<p class="text-xs text-red-400 text-center col-span-4 py-10">Gagal memuat produk.</p>'; }
     }
 
-    lastSavedCart = [...cart]; lastSavedCustomer = customerName; lastSavedTable = tableNumber;
-    if (doPrint) executePrint('customer', newOrder.id, customerName, tableNumber, lastSavedCart, total, pay, pay - total, modalPayMethod);
+    function renderProducts() {
+      const grid = document.getElementById('product-grid');
+      grid.innerHTML = '';
+      const filtered = allProducts.filter(p => currentCategory === 'semua' || p.category === currentCategory);
+      if (!filtered.length) return grid.innerHTML = '<p class="text-xs text-zinc-500 text-center col-span-4 py-10">Tidak ada produk.</p>';
 
-    cart = []; renderCart(); payModal.classList.add('hidden');
-  } catch (err) {
-    alert("Gagal menyimpan transaksi ke Neon DB.");
-  } finally {
-    confirmBtn.disabled = false; printBtn.disabled = false;
-    confirmBtn.innerHTML = origText;
-  }
-}
+      filtered.forEach(p => {
+        let finalPrice = p.price;
+        if (p.discountType === 'percent') finalPrice -= (p.price * (p.discountValue / 100));
+        else if (p.discountType === 'nominal') finalPrice -= p.discountValue;
+        
+        const card = document.createElement('div');
+        card.className = "product-card bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden cursor-pointer hover:border-red-600 p-2 transition-all";
+        card.innerHTML = `
+          <img src="${p.imageUrl}" class="w-full h-20 object-cover rounded-lg mb-1.5">
+          <h4 class="font-bold text-zinc-100 text-[11px] truncate">${p.name}</h4>
+          <p class="text-red-500 font-black text-[11px]">Rp ${finalPrice.toLocaleString('id-ID')}</p>
+        `;
+        card.addEventListener('click', () => addToCart(p, finalPrice));
+        grid.appendChild(card);
+      });
+    }
 
-document.getElementById('pay-modal-confirm').addEventListener('click', () => saveOrderAndPrint(true));
-document.getElementById('pay-modal-print').addEventListener('click', () => saveOrderAndPrint(false));
+    // === KATEGORI ===
+    document.querySelectorAll('#cat-tabs button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#cat-tabs button').forEach(b => b.className = "cat-btn bg-zinc-900 text-zinc-400 border border-zinc-800 font-bold px-3 py-1 rounded-lg text-xs");
+        btn.className = "cat-btn bg-red-600 text-white font-bold px-3 py-1 rounded-lg text-xs";
+        currentCategory = btn.dataset.cat;
+        renderProducts();
+      });
+    });
 
-/* =====================================================
-   PRINT DAPUR & BAR (DARI DALAM POPUP)
-===================================================== */
-document.getElementById('print-kitchen-btn').addEventListener('click', () => {
-  const items = cart.length > 0 ? cart : lastSavedCart;
-  const cust = cart.length > 0 ? (document.getElementById('customer-select').value || "Pelanggan Umum") : lastSavedCustomer;
-  const tbl = cart.length > 0 ? (document.getElementById('table-no').value || '-') : lastSavedTable;
-  if (items.length === 0) return alert("Tidak ada item pesanan!");
-  executePrint('kitchen', "SLIP DAPUR", cust, tbl, items, 0, 0, 0, '-');
-});
+    // === CART ===
+    function addToCart(prod, finalPrice) {
+      const existing = cart.find(i => i.id === prod.id);
+      if (existing) existing.qty += 1;
+      else cart.push({ ...prod, finalPrice, qty: 1, itemNote: "" });
+      renderCart();
+    }
 
-document.getElementById('print-drink-btn').addEventListener('click', () => {
-  const items = cart.length > 0 ? cart : lastSavedCart;
-  const cust = cart.length > 0 ? (document.getElementById('customer-select').value || "Pelanggan Umum") : lastSavedCustomer;
-  const tbl = cart.length > 0 ? (document.getElementById('table-no').value || '-') : lastSavedTable;
-  if (items.length === 0) return alert("Tidak ada item pesanan!");
-  executePrint('drink', "SLIP BAR", cust, tbl, items, 0, 0, 0, '-');
-});
+    function renderCart() {
+      const container = document.getElementById('cart-items');
+      container.innerHTML = '';
+      let total = 0;
+      
+      if (cart.length === 0) {
+        container.innerHTML = '<p class="text-xs text-zinc-500 text-center py-6">Keranjang kosong</p>';
+        document.getElementById('cart-total').innerText = 'Rp 0';
+        return;
+      }
 
-/* =====================================================
-   RAWBT PRINTING
-===================================================== */
-function executePrint(type, orderId, customer, table, itemsList, total, pay, change, payMethod) {
-  const isCust = type === 'customer';
-  let filteredItems = itemsList;
+      cart.forEach((item, index) => {
+        const subtotal = item.finalPrice * item.qty;
+        total += subtotal;
+        const div = document.createElement('div');
+        div.className = "bg-zinc-950 border border-zinc-800 p-2 rounded space-y-1 text-xs";
+        div.innerHTML = `
+          <div class="flex justify-between"><span class="font-bold text-zinc-100">${item.name}</span><span class="font-black text-red-500">Rp ${subtotal.toLocaleString('id-ID')}</span></div>
+          <div class="flex items-center space-x-1.5">
+            <button class="btn-minus w-5 h-5 bg-zinc-800 text-red-400 font-bold rounded" data-index="${index}">-</button>
+            <span class="font-bold text-white text-[10px] w-4 text-center">${item.qty}</span>
+            <button class="btn-plus w-5 h-5 bg-red-600 text-white font-bold rounded" data-index="${index}">+</button>
+          </div>`;
+        container.appendChild(div);
+      });
 
-  if (type === 'kitchen') filteredItems = itemsList.filter(i => i.category === 'makanan' || i.category === 'paket');
-  if (type === 'drink') filteredItems = itemsList.filter(i => i.category === 'minuman' || i.category === 'paket');
+      document.getElementById('cart-total').innerText = 'Rp ' + total.toLocaleString('id-ID');
 
-  if (filteredItems.length === 0) return alert(`Tidak ada menu untuk kategori ${type === 'kitchen' ? 'Dapur' : 'Bar'}.`);
+      container.querySelectorAll('.btn-minus').forEach(b => b.addEventListener('click', () => { cart[b.dataset.index].qty--; if(cart[b.dataset.index].qty <= 0) cart.splice(b.dataset.index, 1); renderCart(); }));
+      container.querySelectorAll('.btn-plus').forEach(b => b.addEventListener('click', () => { cart[b.dataset.index].qty++; renderCart(); }));
+    }
 
-  const now = new Date();
-  const timeStr = now.toLocaleDateString('id-ID') + ' ' + now.toLocaleTimeString('id-ID');
+    document.getElementById('clear-cart-btn').addEventListener('click', () => { if(confirm("Hapus semua?")) { cart = []; renderCart(); } });
 
-  let printText = `${printerConfig.storeName}\n${printerConfig.storeAddress}\nTelp: ${printerConfig.storePhone}\n--------------------------------\n`;
-  printText += `${isCust ? 'STRUK PEMBAYARAN' : (type === 'kitchen' ? 'SLIP DAPUR' : 'SLIP BAR')}\n`;
-  printText += `No: #${orderId}\nWaktu: ${timeStr}\nKasir: ${activeCashierName || "Kasir"}\nCust: ${customer} (${table})\nMetode: ${payMethod}\n--------------------------------\n`;
+    // === POPUP PEMBAYARAN ===
+    document.getElementById('open-pay-modal-btn').addEventListener('click', () => {
+      if (cart.length === 0) return alert('Keranjang kosong!');
+      modalTotal = cart.reduce((s, i) => s + (i.finalPrice * i.qty), 0);
+      document.getElementById('pay-modal-total').innerText = 'Rp ' + modalTotal.toLocaleString('id-ID');
+      document.getElementById('pay-modal-amount').value = '';
+      document.getElementById('pay-modal-change').innerText = 'Rp 0';
+      document.getElementById('pay-modal').classList.remove('hidden');
+    });
 
-  let subtotalCalc = 0;
-  filteredItems.forEach(i => {
-    const itemSub = i.finalPrice * i.qty;
-    subtotalCalc += itemSub;
-    printText += `${i.name} x${i.qty}${isCust ? ' Rp ' + itemSub.toLocaleString('id-ID') : ''}\n`;
-    if (i.itemNote) printText += ` *Req: ${i.itemNote}\n`;
-  });
+    document.getElementById('close-pay-modal-btn').addEventListener('click', () => document.getElementById('pay-modal').classList.add('hidden'));
+    
+    document.getElementById('pay-modal-amount').addEventListener('input', (e) => {
+      const pay = parseFloat(e.target.value) || 0;
+      const change = pay - modalTotal;
+      document.getElementById('pay-modal-change').innerText = 'Rp ' + (change > 0 ? change.toLocaleString('id-ID') : '0');
+      document.getElementById('pay-modal-change').className = change >= 0 ? 'text-xl font-black text-emerald-400' : 'text-xl font-black text-red-500';
+    });
 
-  printText += `--------------------------------\n`;
+    window.setQuickCashModal = (amt) => {
+      const input = document.getElementById('pay-modal-amount');
+      input.value = amt === 0 ? modalTotal : amt;
+      input.dispatchEvent(new Event('input'));
+    };
 
-  if (isCust) {
-    const taxAmount = subtotalCalc * (printerConfig.taxPercent / 100);
-    const finalTotal = subtotalCalc + taxAmount;
-    printText += `Subtotal: Rp ${subtotalCalc.toLocaleString('id-ID')}\n`;
-    if (printerConfig.taxPercent > 0) printText += `PPN (${printerConfig.taxPercent}%): Rp ${taxAmount.toLocaleString('id-ID')}\n`;
-    printText += `TOTAL: Rp ${finalTotal.toLocaleString('id-ID')}\nBayar: Rp ${(pay || 0).toLocaleString('id-ID')}\nKembali: Rp ${(change > 0 ? change : 0).toLocaleString('id-ID')}\n--------------------------------\n${printerConfig.storeFooter}\n\n\n`;
-  } else {
-    printText += `--- SEGERA DIPROSES ---\n\n\n`;
-  }
+    // === SIMPAN TRANSAKSI ===
+    document.getElementById('pay-modal-confirm').addEventListener('click', async () => {
+      const pay = parseFloat(document.getElementById('pay-modal-amount').value) || 0;
+      if (pay < modalTotal) return alert('Uang kurang!');
+      
+      try {
+        await sql`INSERT INTO orders (cashier_name, customer_name, table_number, payment_method, status, total_amount, paid_amount, change_amount) 
+                  VALUES (${activeCashierName}, ${document.getElementById('customer-select').value}, ${document.getElementById('table-no').value}, 'CASH', 'COMPLETED', ${modalTotal}, ${pay}, ${pay - modalTotal})`;
+        
+        alert("Transaksi Berhasil Disimpan!");
+        cart = []; renderCart();
+        document.getElementById('pay-modal').classList.add('hidden');
+      } catch (err) { alert("Gagal simpan ke database."); console.error(err); }
+    });
 
-  window.location.href = "intent:" + encodeURIComponent(printText) + "#Intent;scheme=rawbt;package=ru.a404m.rawbt;end;";
-}
-
-loadCashiers();
+  </script>
+</body>
+</html>
