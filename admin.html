@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="id" class="dark h-full bg-zinc-950">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Chicken Fire Mataram</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { brand: { red: '#E70011' } } } } }
+  </script>
+  <style>
+    html, body { height: 100%; margin: 0; padding: 0; background-color: #09090b !important; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #09090b; }
+    ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 font-sans min-h-screen flex flex-col overflow-y-auto antialiased">
+
+  <!-- MODAL LOGIN ADMIN -->
+  <div id="login-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-50 p-4">
+    <div class="relative bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden">
+      <div class="p-6 text-center border-b border-zinc-800">
+        <h2 class="text-xl font-black text-white uppercase tracking-wider">LOGIN ADMIN</h2>
+        <p class="text-xs text-zinc-400 mt-1">Akses Terbatas</p>
+      </div>
+      <form id="login-form" class="p-6 space-y-4">
+        <div>
+          <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Username</label>
+          <input type="text" id="login-user" required placeholder="admin" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-red-600">
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Password</label>
+          <input type="password" id="login-pass" required placeholder="••••••••" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-red-600">
+        </div>
+        <p id="login-error" class="text-xs text-red-400 font-medium hidden text-center bg-red-950/40 border border-red-900/50 p-2 rounded-lg">Password salah.</p>
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 rounded-xl transition text-xs uppercase tracking-wider">Masuk Admin</button>
+        <div class="text-center mt-2">
+          <a href="index.html" class="text-[10px] text-zinc-500 hover:text-white">&larr; Kembali ke Pilih Akses</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- HEADER ADMIN -->
+  <header class="bg-zinc-900 border-b border-zinc-800 px-4 py-3 flex items-center justify-between flex-shrink-0 hidden" id="main-header">
+    <div class="flex items-center space-x-3">
+      <h1 class="font-black text-sm tracking-wide text-white"><i class="fas fa-shield-alt text-blue-500 mr-2"></i> ADMIN PANEL</h1>
+    </div>
+    <div class="flex items-center space-x-2">
+      <a href="riwayat.html" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-1.5 rounded text-[11px] font-bold border border-zinc-700">Lihat Riwayat</a>
+      <a href="index.html" class="bg-red-950/80 hover:bg-red-900 text-red-400 px-3 py-1.5 rounded text-[11px] font-bold border border-red-800/50">Keluar</a>
+    </div>
+  </header>
+
+  <!-- DASHBOARD ADMIN -->
+  <div id="admin-view" class="flex-1 p-4 max-w-6xl w-full mx-auto space-y-4 hidden">
+    
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <!-- Tambah Produk -->
+      <div class="bg-zinc-900 p-5 rounded-xl border border-zinc-800 space-y-3">
+        <h3 class="font-bold text-white text-sm border-b border-zinc-800 pb-2">Tambah Menu Baru</h3>
+        <form id="add-product-form" class="space-y-3">
+          <div>
+            <label class="text-[10px] font-bold text-zinc-400 block mb-1">Nama Menu</label>
+            <input type="text" id="prod-name" required placeholder="Cth: Ayam Lava" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-xs text-zinc-200">
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] font-bold text-zinc-400 block mb-1">Kategori</label>
+              <select id="prod-category" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-xs text-zinc-200">
+                <option value="makanan">Makanan</option>
+                <option value="minuman">Minuman</option>
+                <option value="paket">Paket</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-zinc-400 block mb-1">Harga (Rp)</label>
+              <input type="number" id="prod-price" required placeholder="25000" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-xs text-zinc-200">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 bg-zinc-950/80 p-2 rounded-lg border border-zinc-800">
+            <div>
+              <label class="text-[9px] font-bold text-amber-500 block mb-1">Tipe Diskon</label>
+              <select id="prod-discount-type" class="w-full bg-zinc-900 border border-zinc-800 rounded p-1.5 text-xs text-zinc-200">
+                <option value="none">Tanpa Diskon</option>
+                <option value="percent">Persen (%)</option>
+                <option value="nominal">Nominal (Rp)</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[9px] font-bold text-amber-500 block mb-1">Nilai Diskon</label>
+              <input type="number" id="prod-discount-value" placeholder="0" value="0" class="w-full bg-zinc-900 border border-zinc-800 rounded p-1.5 text-xs text-zinc-200">
+            </div>
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-zinc-400 block mb-1">Upload Foto</label>
+            <input type="file" id="prod-image-file" accept="image/*" class="w-full text-xs text-zinc-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-zinc-800 file:text-zinc-200">
+          </div>
+          <button type="submit" id="save-product-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-xs transition">Simpan Menu</button>
+        </form>
+      </div>
+
+      <!-- Daftar Produk -->
+      <div class="bg-zinc-900 p-5 rounded-xl border border-zinc-800 flex flex-col h-[400px]">
+        <h3 class="font-bold text-white text-sm border-b border-zinc-800 pb-2 mb-3">Daftar Menu Aktif</h3>
+        <div id="admin-menu-list" class="overflow-y-auto flex-1 space-y-2 pr-1"></div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <!-- Tambah Kasir -->
+      <div class="bg-zinc-900 p-5 rounded-xl border border-zinc-800 space-y-3">
+        <h3 class="font-bold text-white text-sm border-b border-zinc-800 pb-2">Tambah Akun Kasir</h3>
+        <form id="add-cashier-form" class="space-y-2">
+          <input type="text" id="cashier-name-input" required placeholder="Nama Lengkap Petugas" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-xs text-zinc-200">
+          <div class="grid grid-cols-2 gap-2">
+            <input type="text" id="cashier-user-input" required placeholder="Username" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-xs text-zinc-200">
+            <input type="password" id="cashier-pass-input" required placeholder="Password" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-xs text-zinc-200">
+          </div>
+          <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-xs">Simpan Akun Kasir</button>
+        </form>
+        <div id="cashier-list-admin" class="space-y-1 max-h-32 overflow-y-auto mt-2"></div>
+      </div>
+
+      <!-- Ganti Password Admin -->
+      <div class="bg-zinc-900 p-5 rounded-xl border border-zinc-800 space-y-3 h-fit">
+        <h3 class="font-bold text-white text-sm border-b border-zinc-800 pb-2">Ganti Password Admin</h3>
+        <form id="change-admin-pass-form" class="space-y-2">
+          <input type="password" id="new-admin-pass" required placeholder="Password Admin Baru" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-xs text-zinc-200">
+          <button type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 rounded-lg text-xs">Update Password</button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module" src="admin.js"></script>
+</body>
+</html>
