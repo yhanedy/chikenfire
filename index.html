@@ -4,37 +4,110 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chicken Fire Mataram - Pilih Akses</title>
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+  
   <script>
-    tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { brand: { red: '#E70011' } } } } }
+    tailwind.config = { 
+      darkMode: 'class', 
+      theme: { 
+        extend: { 
+          fontFamily: { sans: ['Inter', 'sans-serif'] }, 
+          colors: { brand: { red: '#E70011' } } 
+        } 
+      } 
+    }
   </script>
+  
   <style>
-    html, body { height: 100%; margin: 0; background-color: #09090b !important; }
+    /* Memastikan layar penuh tanpa scroll */
+    html, body { 
+      height: 100%; 
+      margin: 0; 
+      background-color: #09090b !important; 
+      overflow: hidden; 
+    }
+    
+    /* Animasi muncul halus */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.8s ease-out forwards;
+    }
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
   </style>
 </head>
-<body class="text-zinc-100 font-sans min-h-screen flex items-center justify-center p-4 antialiased selection:bg-red-500 selection:text-white">
+<body class="text-zinc-100 font-sans min-h-screen flex items-center justify-center p-4 antialiased selection:bg-red-500 selection:text-white relative">
 
-  <div class="max-w-3xl w-full grid grid-cols-1 md:grid-cols-2 gap-6">
+  <!-- 1. BACKGROUND IMAGE DENGAN EFEK PARALLAX & OVERLAY -->
+  <div class="absolute inset-0 z-0">
+    <!-- Gambar dari Google Drive -->
+    <img 
+      src="https://drive.google.com/uc?export=view&id=1jjinAdsJpEUSIZDYMLkrLweZNBD9z5Lz" 
+      alt="Background Chicken Fire" 
+      class="w-full h-full object-cover object-center opacity-60 scale-105 filter blur-[2px]"
+    >
     
-    <!-- Card Kasir -->
-    <a href="kasir.html" class="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 hover:border-red-600 hover:shadow-[0_0_30px_rgba(231,0,17,0.2)] transition-all duration-300 group flex flex-col items-center text-center">
-      <div class="w-20 h-20 bg-red-950/50 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-        <i class="fas fa-cash-register text-4xl text-red-500"></i>
-      </div>
-      <h2 class="text-xl font-black text-white uppercase tracking-wider mb-2">Masuk Kasir</h2>
-      <p class="text-xs text-zinc-400">Khusus untuk petugas siswa. Melayani pesanan dan mencetak struk.</p>
-    </a>
+    <!-- Overlay Gelap (Agar teks terbaca) -->
+    <div class="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/70 to-zinc-950/30"></div>
+    
+    <!-- Efek Cahaya Merah di Pojok (Opsional, untuk kesan Futuristik) -->
+    <div class="absolute top-0 right-0 w-96 h-96 bg-red-600/20 rounded-full blur-[100px] -mr-20 -mt-20"></div>
+    <div class="absolute bottom-0 left-0 w-96 h-96 bg-orange-600/10 rounded-full blur-[100px] -ml-20 -mb-20"></div>
+  </div>
 
-    <!-- Card Admin -->
-    <a href="admin.html" class="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 hover:border-blue-600 hover:shadow-[0_0_30px_rgba(37,99,235,0.2)] transition-all duration-300 group flex flex-col items-center text-center">
-      <div class="w-20 h-20 bg-blue-950/50 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-        <i class="fas fa-shield-alt text-4xl text-blue-500"></i>
-      </div>
-      <h2 class="text-xl font-black text-white uppercase tracking-wider mb-2">Masuk Admin</h2>
-      <p class="text-xs text-zinc-400">Kelola menu, harga, akun kasir, dan sistem restoran.</p>
-    </a>
+  <!-- 2. KONTEN UTAMA -->
+  <div class="relative z-10 w-full max-w-4xl flex flex-col items-center">
+    
+    <!-- LOGO & JUDUL (Animasi Muncul) -->
+    <div class="text-center mb-10 animate-fade-in delay-1">
+      <img src="https://lh3.googleusercontent.com/d/1SlFhu3ctTmnSSjbNX-60E0-3khaYuSqp" alt="Logo" class="w-24 h-24 rounded-full object-cover border-4 border-red-600 mx-auto mb-4 shadow-[0_0_30px_rgba(231,0,17,0.6)]">
+      <h1 class="text-4xl md:text-5xl font-black text-white uppercase tracking-widest drop-shadow-lg">
+        CHICKEN FIRE
+      </h1>
+      <p class="text-sm md:text-base text-zinc-300 font-semibold tracking-widest mt-2 uppercase drop-shadow-md">
+        Mataram • Karanganyar
+      </p>
+    </div>
+
+    <!-- KARTU PILIHAN AKSES (Glassmorphism) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl px-4">
+      
+      <!-- Card Kasir -->
+      <a href="kasir.html" class="group relative bg-zinc-900/60 backdrop-blur-xl border border-zinc-700/50 rounded-3xl p-8 hover:border-red-500 hover:shadow-[0_0_40px_rgba(231,0,17,0.3)] transition-all duration-300 flex flex-col items-center text-center overflow-hidden animate-fade-in delay-2">
+        <!-- Efek kilau di dalam kartu -->
+        <div class="absolute inset-0 bg-gradient-to-br from-red-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        
+        <div class="w-20 h-20 bg-red-950/80 rounded-full flex items-center justify-center mb-5 group-hover:scale-110 group-hover:bg-red-600 transition-all duration-300 shadow-lg">
+          <i class="fas fa-cash-register text-3xl text-red-500 group-hover:text-white transition-colors"></i>
+        </div>
+        <h2 class="text-2xl font-black text-white uppercase tracking-wider mb-2 relative z-10">Masuk Kasir</h2>
+        <p class="text-sm text-zinc-400 relative z-10">Khusus petugas siswa. Melayani pesanan dan mencetak struk.</p>
+      </a>
+
+      <!-- Card Admin -->
+      <a href="admin.html" class="group relative bg-zinc-900/60 backdrop-blur-xl border border-zinc-700/50 rounded-3xl p-8 hover:border-blue-500 hover:shadow-[0_0_40px_rgba(37,99,235,0.3)] transition-all duration-300 flex flex-col items-center text-center overflow-hidden animate-fade-in delay-3">
+        <div class="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        
+        <div class="w-20 h-20 bg-blue-950/80 rounded-full flex items-center justify-center mb-5 group-hover:scale-110 group-hover:bg-blue-600 transition-all duration-300 shadow-lg">
+          <i class="fas fa-shield-alt text-3xl text-blue-500 group-hover:text-white transition-colors"></i>
+        </div>
+        <h2 class="text-2xl font-black text-white uppercase tracking-wider mb-2 relative z-10">Masuk Admin</h2>
+        <p class="text-sm text-zinc-400 relative z-10">Kelola menu, harga, akun kasir, dan pantau omset.</p>
+      </a>
+
+    </div>
+
+    <!-- Footer Bawah -->
+    <p class="mt-12 text-xs text-zinc-500 font-medium animate-fade-in delay-3">
+      &copy; 2026 Chicken Fire Mataram. All Rights Reserved.
+    </p>
 
   </div>
 
