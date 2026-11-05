@@ -18,31 +18,57 @@ let printerConfig = JSON.parse(localStorage.getItem('cfm_printer_cfg')) || {
   printBar: "rawbt"
 };
 
-// === LOGIN KASIR ===
+// === LOGIN KASIR (DIPERBAIKI DENGAN DEBUGGING) ===
 document.getElementById('login-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const u = document.getElementById('login-user').value.trim();
   const p = document.getElementById('login-pass').value.trim();
   const errorMsg = document.getElementById('login-error');
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  const originalBtnText = submitBtn.innerHTML;
+
+  // Tampilkan loading di tombol
+  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Memeriksa...';
+  submitBtn.disabled = true;
+  errorMsg.classList.add('hidden');
 
   try {
-    const rows = await sql`SELECT * FROM cashiers ORDER BY created_at DESC`;
-    const match = rows.find(c => c.username === u && c.password === p);
-    const isDefault = (u === 'kasir' && p === 'kasir123');
-    if (match || isDefault) {
-      activeCashierName = match ? match.name : "Kasir Siswa";
-      document.getElementById('login-modal').classList.add('hidden');
-      document.getElementById('current-user-display').innerText = activeCashierName;
-      errorMsg.classList.add('hidden');
-      loadProducts();
-    } else errorMsg.classList.remove('hidden');
-  } catch (err) {
+    // 1. CEK BYPASS (Untuk Darurat jika Database Down)
     if (u === 'kasir' && p === 'kasir123') {
-      activeCashierName = "Kasir Siswa";
+      activeCashierName = "Kasir Bypass";
       document.getElementById('login-modal').classList.add('hidden');
       document.getElementById('current-user-display').innerText = activeCashierName;
-      loadProducts();
-    } else errorMsg.classList.remove('hidden');
+      await loadProducts();
+      return; // Hentikan proses di sini jika berhasil bypass
+    }
+
+    // 2. CEK KE DATABASE
+    const rows = await sql`SELECT * FROM cashiers WHERE username = ${u} LIMIT 1`;
+    
+    if (rows.length === 0) {
+      throw new Error("Username tidak ditemukan di database.");
+    }
+
+    const match = rows[0];
+    if (match.password !== p) {
+      throw new Error("Password salah.");
+    }
+
+    // Jika berhasil
+    activeCashierName = match.name;
+    document.getElementById('login-modal').classList.add('hidden');
+    document.getElementById('current-user-display').innerText = activeCashierName;
+    await loadProducts();
+
+  } catch (err) {
+    console.error("Login Error:", err);
+    // Tampilkan pesan error asli ke layar
+    errorMsg.innerText = `Gagal: ${err.message}`;
+    errorMsg.classList.remove('hidden');
+  } finally {
+    // Kembalikan tombol ke semula
+    submitBtn.innerHTML = originalBtnText;
+    submitBtn.disabled = false;
   }
 });
 
@@ -55,7 +81,10 @@ async function loadProducts() {
       id: p.id, name: p.name, category: p.category, price: parseFloat(p.price) || 0, discountType: p.discount_type, discountValue: parseFloat(p.discount_value) || 0, imageUrl: p.image_url
     }));
     renderProducts();
-  } catch (err) { grid.innerHTML = '<p class="text-sm text-red-400 text-center col-span-4 py-10">Gagal memuat produk.</p>'; }
+  } catch (err) { 
+    console.error("Gagal load produk:", err);
+    grid.innerHTML = '<p class="text-sm text-red-400 text-center col-span-4 py-10">Gagal memuat produk dari database.</p>'; 
+  }
 }
 
 function renderProducts() {
@@ -281,9 +310,23 @@ function printReceipt(type) {
   const printMethod = type === 'kitchen' ? printerConfig.printKitchen : printerConfig.printBar;
 
   if (printMethod === 'rawbt') {
-    // Cetak via RawBT (Android)
     window.location.href = "intent:" + encodeURIComponent(printText) + "#Intent;scheme=rawbt;package=ru.a404m.rawbt;end;";
   } else {
-    // Cetak via Browser (PC/Laptop)
     const printWindow = window.open('', '', 'width=400,height=600');
-    printWindow.document.write('<pre style="font-family: monospace; font-size: 12px; white-space: pre-wrap; padding: 10px;">' + printText + '</
+    printWindow.document.write('<pre style="font-family: monospace; font-size: 12px; white-space: pre-wrap; padding: 10px;">' + printText + '</pre>');
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => { printWindow.print(); }, 500);
+  }
+}
+
+document.getElementById('print-kitchen-btn').addEventListener('click', () => printReceipt('kitchen'));
+document.getElementById('print-drink-btn').addEventListener('click', () => printReceipt('drink'));
+
+document.getElementById('close-print-modal-btn').addEventListener('click', () => {
+  cart = []; 
+  renderCart();
+  printModal.classList.add('hidden');
+  document.getElementById('table-no').value = '';
+  document.getElementById('customer-select').value = 'Pelanggan Umum';
+});
