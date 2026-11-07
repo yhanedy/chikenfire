@@ -8,7 +8,7 @@ let modalTotal = 0;
 let lastTransactionId = null;
 let currentPayMethod = "CASH";
 
-// === STATE KONFIGURASI PRINTER ===
+// === KONFIGURASI PRINTER ===
 let printerConfig = JSON.parse(localStorage.getItem('cfm_printer_cfg')) || {
   storeName: "CHICKEN FIRE MATARAM",
   storePhone: "0812-3456-7890",
@@ -18,7 +18,7 @@ let printerConfig = JSON.parse(localStorage.getItem('cfm_printer_cfg')) || {
   printBar: "rawbt"
 };
 
-// === LOGIN KASIR (DIPERBAIKI DENGAN DEBUGGING) ===
+// === LOGIN KASIR (DENGAN BYPASS) ===
 document.getElementById('login-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const u = document.getElementById('login-user').value.trim();
@@ -27,34 +27,24 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
   const submitBtn = e.target.querySelector('button[type="submit"]');
   const originalBtnText = submitBtn.innerHTML;
 
-  // Tampilkan loading di tombol
   submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Memeriksa...';
   submitBtn.disabled = true;
   errorMsg.classList.add('hidden');
 
   try {
-    // 1. CEK BYPASS (Untuk Darurat jika Database Down)
     if (u === 'kasir' && p === 'kasir123') {
       activeCashierName = "Kasir Bypass";
       document.getElementById('login-modal').classList.add('hidden');
       document.getElementById('current-user-display').innerText = activeCashierName;
       await loadProducts();
-      return; // Hentikan proses di sini jika berhasil bypass
+      return;
     }
 
-    // 2. CEK KE DATABASE
     const rows = await sql`SELECT * FROM cashiers WHERE username = ${u} LIMIT 1`;
-    
-    if (rows.length === 0) {
-      throw new Error("Username tidak ditemukan di database.");
-    }
-
+    if (rows.length === 0) throw new Error("Username tidak ditemukan.");
     const match = rows[0];
-    if (match.password !== p) {
-      throw new Error("Password salah.");
-    }
+    if (match.password !== p) throw new Error("Password salah.");
 
-    // Jika berhasil
     activeCashierName = match.name;
     document.getElementById('login-modal').classList.add('hidden');
     document.getElementById('current-user-display').innerText = activeCashierName;
@@ -62,11 +52,9 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
 
   } catch (err) {
     console.error("Login Error:", err);
-    // Tampilkan pesan error asli ke layar
     errorMsg.innerText = `Gagal: ${err.message}`;
     errorMsg.classList.remove('hidden');
   } finally {
-    // Kembalikan tombol ke semula
     submitBtn.innerHTML = originalBtnText;
     submitBtn.disabled = false;
   }
@@ -83,7 +71,7 @@ async function loadProducts() {
     renderProducts();
   } catch (err) { 
     console.error("Gagal load produk:", err);
-    grid.innerHTML = '<p class="text-sm text-red-400 text-center col-span-4 py-10">Gagal memuat produk dari database.</p>'; 
+    grid.innerHTML = '<p class="text-xs text-red-400 text-center col-span-4 py-10">Gagal memuat produk dari database.</p>'; 
   }
 }
 
@@ -91,7 +79,7 @@ function renderProducts() {
   const grid = document.getElementById('product-grid');
   grid.innerHTML = '';
   const filtered = allProducts.filter(p => currentCategory === 'semua' || p.category === currentCategory);
-  if (!filtered.length) return grid.innerHTML = '<p class="text-sm text-zinc-500 text-center col-span-4 py-10">Tidak ada produk.</p>';
+  if (!filtered.length) return grid.innerHTML = '<p class="text-xs text-zinc-500 text-center col-span-4 py-10">Tidak ada produk.</p>';
 
   filtered.forEach(p => {
     let finalPrice = p.price;
@@ -99,11 +87,11 @@ function renderProducts() {
     else if (p.discountType === 'nominal') finalPrice -= p.discountValue;
     
     const card = document.createElement('div');
-    card.className = "product-card bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden cursor-pointer hover:border-red-600 p-3 transition-all";
+    card.className = "product-card bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden cursor-pointer hover:border-red-600 p-2 transition-all";
     card.innerHTML = `
-      <img src="${p.imageUrl}" class="w-full h-24 object-cover rounded-lg mb-2">
-      <h4 class="font-bold text-zinc-100 text-sm truncate">${p.name}</h4>
-      <p class="text-red-500 font-black text-sm mt-1">Rp ${finalPrice.toLocaleString('id-ID')}</p>
+      <img src="${p.imageUrl}" class="w-full h-20 object-cover rounded-lg mb-1.5">
+      <h4 class="font-bold text-zinc-100 text-xs truncate">${p.name}</h4>
+      <p class="text-red-500 font-black text-xs mt-1">Rp ${finalPrice.toLocaleString('id-ID')}</p>
     `;
     card.addEventListener('click', () => addToCart(p, finalPrice));
     grid.appendChild(card);
@@ -113,8 +101,8 @@ function renderProducts() {
 // === KATEGORI ===
 document.querySelectorAll('#cat-tabs button').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('#cat-tabs button').forEach(b => b.className = "cat-btn bg-zinc-900 text-zinc-400 border border-zinc-800 font-bold px-4 py-2 rounded-lg text-sm");
-    btn.className = "cat-btn bg-red-600 text-white font-bold px-4 py-2 rounded-lg text-sm";
+    document.querySelectorAll('#cat-tabs button').forEach(b => b.className = "cat-btn bg-zinc-900 text-zinc-400 border border-zinc-800 font-bold px-3 py-1.5 rounded-lg text-xs");
+    btn.className = "cat-btn bg-red-600 text-white font-bold px-3 py-1.5 rounded-lg text-xs";
     currentCategory = btn.dataset.cat;
     renderProducts();
   });
@@ -134,7 +122,7 @@ function renderCart() {
   let total = 0;
   
   if (cart.length === 0) {
-    container.innerHTML = '<p class="text-sm text-zinc-500 text-center py-6">Keranjang kosong</p>';
+    container.innerHTML = '<p class="text-xs text-zinc-500 text-center py-6">Keranjang kosong</p>';
     document.getElementById('cart-total').innerText = 'Rp 0';
     return;
   }
@@ -143,18 +131,18 @@ function renderCart() {
     const subtotal = item.finalPrice * item.qty;
     total += subtotal;
     const div = document.createElement('div');
-    div.className = "bg-zinc-950 border border-zinc-800 p-3 rounded-xl space-y-2 text-sm";
+    div.className = "bg-zinc-950 border border-zinc-800 p-2.5 rounded-xl space-y-2 text-xs";
     div.innerHTML = `
       <div class="flex justify-between items-center">
         <span class="font-bold text-zinc-100">${item.name}</span>
         <span class="font-black text-red-500">Rp ${subtotal.toLocaleString('id-ID')}</span>
       </div>
       <div class="flex items-center space-x-2">
-        <button class="btn-minus w-7 h-7 bg-zinc-800 text-red-400 font-bold rounded-lg" data-index="${index}">-</button>
-        <span class="font-bold text-white text-sm w-6 text-center">${item.qty}</span>
-        <button class="btn-plus w-7 h-7 bg-red-600 text-white font-bold rounded-lg" data-index="${index}">+</button>
+        <button class="btn-minus w-6 h-6 bg-zinc-800 text-red-400 font-bold rounded-lg" data-index="${index}">-</button>
+        <span class="font-bold text-white text-xs w-6 text-center">${item.qty}</span>
+        <button class="btn-plus w-6 h-6 bg-red-600 text-white font-bold rounded-lg" data-index="${index}">+</button>
       </div>
-      <input type="text" placeholder="Catatan (cth: Pedas, Tanpa Es)..." value="${item.itemNote || ''}" data-index="${index}" class="note-input w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1.5 text-sm text-amber-300 focus:outline-none focus:border-amber-600">
+      <input type="text" placeholder="Catatan (cth: Pedas)..." value="${item.itemNote || ''}" data-index="${index}" class="note-input w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1 text-xs text-amber-300 focus:outline-none focus:border-amber-600">
     `;
     container.appendChild(div);
   });
@@ -185,14 +173,14 @@ function setPayMethod(method) {
   const cashGroup = document.getElementById('pay-modal-cash-group');
 
   if (method === 'CASH') {
-    btnCash.className = "py-3 rounded-xl border font-bold border-red-600 bg-red-600 text-white transition-colors";
-    btnQris.className = "py-3 rounded-xl border font-bold border-zinc-800 bg-zinc-900 text-zinc-400 transition-colors";
+    btnCash.className = "py-2.5 rounded-xl border font-bold border-red-600 bg-red-600 text-white transition-colors text-xs";
+    btnQris.className = "py-2.5 rounded-xl border font-bold border-zinc-800 bg-zinc-900 text-zinc-400 transition-colors text-xs";
     cashGroup.classList.remove('opacity-40', 'pointer-events-none');
     payModalAmount.value = '';
     payModalAmount.dispatchEvent(new Event('input'));
   } else {
-    btnQris.className = "py-3 rounded-xl border font-bold border-blue-600 bg-blue-600 text-white transition-colors";
-    btnCash.className = "py-3 rounded-xl border font-bold border-zinc-800 bg-zinc-900 text-zinc-400 transition-colors";
+    btnQris.className = "py-2.5 rounded-xl border font-bold border-blue-600 bg-blue-600 text-white transition-colors text-xs";
+    btnCash.className = "py-2.5 rounded-xl border font-bold border-zinc-800 bg-zinc-900 text-zinc-400 transition-colors text-xs";
     cashGroup.classList.add('opacity-40', 'pointer-events-none');
     payModalAmount.value = modalTotal;
     payModalAmount.dispatchEvent(new Event('input'));
@@ -279,7 +267,7 @@ document.getElementById('save-printer-settings-btn').addEventListener('click', (
   document.getElementById('printer-modal').classList.add('hidden');
 });
 
-// === FUNGSI CETAK (DENGAN PILIHAN RAWBT / BROWSER) ===
+// === FUNGSI CETAK ===
 function printReceipt(type) {
   const cust = document.getElementById('customer-select').value || "Pelanggan Umum";
   const tbl = document.getElementById('table-no').value || "-";
@@ -329,4 +317,21 @@ document.getElementById('close-print-modal-btn').addEventListener('click', () =>
   printModal.classList.add('hidden');
   document.getElementById('table-no').value = '';
   document.getElementById('customer-select').value = 'Pelanggan Umum';
+});
+
+// === LOGIKA RIWAYAT POP-UP (IFRAME) ===
+const historyModal = document.getElementById('history-modal');
+const historyIframe = document.getElementById('history-iframe');
+
+document.getElementById('open-history-btn').addEventListener('click', () => {
+  historyIframe.src = 'riwayat_kasir.html'; // Muat halaman riwayat ke dalam iframe
+  historyModal.classList.remove('hidden');
+});
+
+// Mendengarkan pesan dari dalam iframe (saat tombol X di riwayat diklik)
+window.addEventListener('message', (event) => {
+  if (event.data === 'closeHistory') {
+    historyModal.classList.add('hidden');
+    historyIframe.src = ''; // Kosongkan src agar koneksi DB terputus (hemat memori)
+  }
 });
