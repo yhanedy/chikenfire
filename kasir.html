@@ -1,337 +1,258 @@
-import { sql } from "./neon-config.js";
-
-let cart = [];
-let allProducts = [];
-let currentCategory = "semua";
-let activeCashierName = "";
-let modalTotal = 0;
-let lastTransactionId = null;
-let currentPayMethod = "CASH";
-
-// === KONFIGURASI PRINTER ===
-let printerConfig = JSON.parse(localStorage.getItem('cfm_printer_cfg')) || {
-  storeName: "CHICKEN FIRE MATARAM",
-  storePhone: "0812-3456-7890",
-  storeAddress: "Karanganyar - Jawa Tengah",
-  storeFooter: "Terima Kasih! Nikmati Pedasnya Chicken Fire!",
-  printKitchen: "rawbt",
-  printBar: "rawbt"
-};
-
-// === LOGIN KASIR (DENGAN BYPASS) ===
-document.getElementById('login-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const u = document.getElementById('login-user').value.trim();
-  const p = document.getElementById('login-pass').value.trim();
-  const errorMsg = document.getElementById('login-error');
-  const submitBtn = e.target.querySelector('button[type="submit"]');
-  const originalBtnText = submitBtn.innerHTML;
-
-  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Memeriksa...';
-  submitBtn.disabled = true;
-  errorMsg.classList.add('hidden');
-
-  try {
-    if (u === 'kasir' && p === 'kasir123') {
-      activeCashierName = "Kasir Bypass";
-      document.getElementById('login-modal').classList.add('hidden');
-      document.getElementById('current-user-display').innerText = activeCashierName;
-      await loadProducts();
-      return;
+<!DOCTYPE html>
+<html lang="id" class="dark h-full bg-zinc-950">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kasir - Chicken Fire Mataram</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = { 
+      darkMode: 'class', 
+      theme: { 
+        extend: { 
+          fontFamily: { sans: ['Inter', 'sans-serif'] }, 
+          colors: { brand: { red: '#E70011' } } 
+        } 
+      } 
     }
-
-    const rows = await sql`SELECT * FROM cashiers WHERE username = ${u} LIMIT 1`;
-    if (rows.length === 0) throw new Error("Username tidak ditemukan.");
-    const match = rows[0];
-    if (match.password !== p) throw new Error("Password salah.");
-
-    activeCashierName = match.name;
-    document.getElementById('login-modal').classList.add('hidden');
-    document.getElementById('current-user-display').innerText = activeCashierName;
-    await loadProducts();
-
-  } catch (err) {
-    console.error("Login Error:", err);
-    errorMsg.innerText = `Gagal: ${err.message}`;
-    errorMsg.classList.remove('hidden');
-  } finally {
-    submitBtn.innerHTML = originalBtnText;
-    submitBtn.disabled = false;
-  }
-});
-
-// === LOAD PRODUK ===
-async function loadProducts() {
-  const grid = document.getElementById('product-grid');
-  try {
-    const rows = await sql`SELECT * FROM products ORDER BY id DESC`;
-    allProducts = rows.map(p => ({
-      id: p.id, name: p.name, category: p.category, price: parseFloat(p.price) || 0, discountType: p.discount_type, discountValue: parseFloat(p.discount_value) || 0, imageUrl: p.image_url
-    }));
-    renderProducts();
-  } catch (err) { 
-    console.error("Gagal load produk:", err);
-    grid.innerHTML = '<p class="text-xs text-red-400 text-center col-span-4 py-10">Gagal memuat produk dari database.</p>'; 
-  }
-}
-
-function renderProducts() {
-  const grid = document.getElementById('product-grid');
-  grid.innerHTML = '';
-  const filtered = allProducts.filter(p => currentCategory === 'semua' || p.category === currentCategory);
-  if (!filtered.length) return grid.innerHTML = '<p class="text-xs text-zinc-500 text-center col-span-4 py-10">Tidak ada produk.</p>';
-
-  filtered.forEach(p => {
-    let finalPrice = p.price;
-    if (p.discountType === 'percent') finalPrice -= (p.price * (p.discountValue / 100));
-    else if (p.discountType === 'nominal') finalPrice -= p.discountValue;
-    
-    const card = document.createElement('div');
-    card.className = "product-card bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden cursor-pointer hover:border-red-600 p-2 transition-all";
-    card.innerHTML = `
-      <img src="${p.imageUrl}" class="w-full h-20 object-cover rounded-lg mb-1.5">
-      <h4 class="font-bold text-zinc-100 text-xs truncate">${p.name}</h4>
-      <p class="text-red-500 font-black text-xs mt-1">Rp ${finalPrice.toLocaleString('id-ID')}</p>
-    `;
-    card.addEventListener('click', () => addToCart(p, finalPrice));
-    grid.appendChild(card);
-  });
-}
-
-// === KATEGORI ===
-document.querySelectorAll('#cat-tabs button').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('#cat-tabs button').forEach(b => b.className = "cat-btn bg-zinc-900 text-zinc-400 border border-zinc-800 font-bold px-3 py-1.5 rounded-lg text-xs");
-    btn.className = "cat-btn bg-red-600 text-white font-bold px-3 py-1.5 rounded-lg text-xs";
-    currentCategory = btn.dataset.cat;
-    renderProducts();
-  });
-});
-
-// === CART ===
-function addToCart(prod, finalPrice) {
-  const existing = cart.find(i => i.id === prod.id);
-  if (existing) existing.qty += 1;
-  else cart.push({ ...prod, finalPrice, qty: 1, itemNote: "" });
-  renderCart();
-}
-
-function renderCart() {
-  const container = document.getElementById('cart-items');
-  container.innerHTML = '';
-  let total = 0;
+  </script>
   
-  if (cart.length === 0) {
-    container.innerHTML = '<p class="text-xs text-zinc-500 text-center py-6">Keranjang kosong</p>';
-    document.getElementById('cart-total').innerText = 'Rp 0';
-    return;
-  }
+  <style>
+    html, body { height: 100%; margin: 0; padding: 0; background-color: #09090b !important; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #09090b; }
+    ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 font-sans min-h-screen h-full flex flex-col overflow-hidden antialiased">
 
-  cart.forEach((item, index) => {
-    const subtotal = item.finalPrice * item.qty;
-    total += subtotal;
-    const div = document.createElement('div');
-    div.className = "bg-zinc-950 border border-zinc-800 p-2.5 rounded-xl space-y-2 text-xs";
-    div.innerHTML = `
-      <div class="flex justify-between items-center">
-        <span class="font-bold text-zinc-100">${item.name}</span>
-        <span class="font-black text-red-500">Rp ${subtotal.toLocaleString('id-ID')}</span>
+  <!-- MODAL LOGIN KASIR -->
+  <div id="login-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-50 p-4">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div class="p-5 text-center border-b border-zinc-800">
+        <h2 class="text-xl font-black text-white uppercase tracking-wider">LOGIN KASIR</h2>
       </div>
-      <div class="flex items-center space-x-2">
-        <button class="btn-minus w-6 h-6 bg-zinc-800 text-red-400 font-bold rounded-lg" data-index="${index}">-</button>
-        <span class="font-bold text-white text-xs w-6 text-center">${item.qty}</span>
-        <button class="btn-plus w-6 h-6 bg-red-600 text-white font-bold rounded-lg" data-index="${index}">+</button>
+      <form id="login-form" class="p-6 space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-zinc-400 uppercase mb-2">Username</label>
+          <input type="text" id="login-user" required placeholder="Username" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-100 focus:outline-none focus:border-red-600">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-zinc-400 uppercase mb-2">Password</label>
+          <input type="password" id="login-pass" required placeholder="••••••••" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-100 focus:outline-none focus:border-red-600">
+        </div>
+        <p id="login-error" class="text-xs text-red-400 font-medium hidden text-center bg-red-950/40 border border-red-900/50 p-3 rounded-lg">Username atau password salah.</p>
+        <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-extrabold py-3 rounded-xl transition text-sm uppercase tracking-wider">Masuk Sistem</button>
+        <div class="text-center mt-2">
+          <a href="index.html" class="text-xs text-zinc-500 hover:text-white">&larr; Kembali ke Pilih Akses</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- HEADER UTAMA -->
+  <header class="bg-zinc-900 border-b border-zinc-800 px-4 py-2.5 flex items-center justify-between flex-shrink-0">
+    <div class="flex items-center space-x-3">
+      <h1 class="font-black text-base tracking-wide text-white leading-none">CHICKEN FIRE MATARAM</h1>
+    </div>
+    <div class="flex items-center space-x-2">
+      <span id="current-user-display" class="bg-zinc-950 text-zinc-300 text-xs font-semibold px-3 py-1.5 rounded-lg border border-zinc-800">Kasir</span>
+      
+      <!-- TOMBOL SETUP PRINTER -->
+      <button id="open-printer-settings-btn" class="bg-zinc-800 hover:bg-zinc-700 text-amber-400 px-3 py-1.5 rounded-lg text-xs font-bold border border-zinc-700 transition flex items-center">
+        <i class="fas fa-print mr-1.5"></i> Setup Printer
+      </button>
+
+      <!-- TOMBOL RIWAYAT (MEMBUKA POPUP IFRAME) -->
+      <button id="open-history-btn" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-1.5 rounded-lg text-xs font-bold border border-zinc-700 transition"><i class="fas fa-history mr-1.5"></i>Riwayat</button>
+      
+      <a href="index.html" class="bg-red-950/80 hover:bg-red-900 text-red-400 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-800/50 transition">Keluar</a>
+    </div>
+  </header>
+
+  <!-- PANEL KASIR -->
+  <div id="kasir-view" class="flex flex-1 overflow-hidden">
+    <div class="w-7/12 md:w-8/12 p-3 flex flex-col h-full bg-zinc-950 border-r border-zinc-800">
+      <div class="flex space-x-2 border-b border-zinc-800 mb-3 pb-2" id="cat-tabs">
+        <button data-cat="semua" class="cat-btn bg-red-600 text-white font-bold px-3 py-1.5 rounded-lg text-xs">Semua</button>
+        <button data-cat="makanan" class="cat-btn bg-zinc-900 text-zinc-400 border border-zinc-800 font-bold px-3 py-1.5 rounded-lg text-xs">Makanan</button>
+        <button data-cat="minuman" class="cat-btn bg-zinc-900 text-zinc-400 border border-zinc-800 font-bold px-3 py-1.5 rounded-lg text-xs">Minuman</button>
+        <button data-cat="paket" class="cat-btn bg-zinc-900 text-zinc-400 border border-zinc-800 font-bold px-3 py-1.5 rounded-lg text-xs">Paket</button>
       </div>
-      <input type="text" placeholder="Catatan (cth: Pedas)..." value="${item.itemNote || ''}" data-index="${index}" class="note-input w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1 text-xs text-amber-300 focus:outline-none focus:border-amber-600">
-    `;
-    container.appendChild(div);
-  });
+      <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 overflow-y-auto pr-2 pb-6">
+        <!-- Produk dimuat via JS -->
+      </div>
+    </div>
 
-  document.getElementById('cart-total').innerText = 'Rp ' + total.toLocaleString('id-ID');
+    <div class="w-5/12 md:w-4/12 bg-zinc-900 flex flex-col h-full justify-between border-l border-zinc-800 overflow-hidden">
+      <div class="p-2.5 bg-zinc-900 border-b border-zinc-800 flex-shrink-0">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-[10px] font-bold text-zinc-400 block mb-1">CUSTOMER</label>
+            <input type="text" id="customer-select" value="Pelanggan Umum" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-1.5 text-xs text-zinc-100">
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-zinc-400 block mb-1">NO. MEJA</label>
+            <input type="text" id="table-no" placeholder="Meja / Takeaway" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-1.5 text-xs text-zinc-100">
+          </div>
+        </div>
+      </div>
 
-  container.querySelectorAll('.btn-minus').forEach(b => b.addEventListener('click', () => { cart[b.dataset.index].qty--; if(cart[b.dataset.index].qty <= 0) cart.splice(b.dataset.index, 1); renderCart(); }));
-  container.querySelectorAll('.btn-plus').forEach(b => b.addEventListener('click', () => { cart[b.dataset.index].qty++; renderCart(); }));
-  container.querySelectorAll('.note-input').forEach(inp => {
-    inp.addEventListener('input', (e) => {
-      const idx = parseInt(e.target.dataset.index);
-      if (cart[idx]) cart[idx].itemNote = e.target.value;
-    });
-  });
-}
+      <div class="p-3 flex-1 overflow-y-auto min-h-0">
+        <div class="flex justify-between items-center border-b border-zinc-800 pb-2 mb-3">
+          <h3 class="font-bold text-zinc-200 text-xs uppercase">Pesanan</h3>
+          <button id="clear-cart-btn" class="text-[10px] text-red-400 hover:underline">Hapus Semua</button>
+        </div>
+        <div id="cart-items" class="space-y-2"></div>
+      </div>
 
-document.getElementById('clear-cart-btn').addEventListener('click', () => { if(confirm("Hapus semua?")) { cart = []; renderCart(); } });
+      <div class="bg-zinc-950 border-t border-zinc-800 p-3 space-y-2 flex-shrink-0">
+        <div class="flex justify-between items-center bg-zinc-900 p-2.5 rounded-xl border border-zinc-800">
+          <span class="text-xs font-bold text-zinc-400">TOTAL</span>
+          <span id="cart-total" class="text-xl font-black text-red-500">Rp 0</span>
+        </div>
+        <button id="open-pay-modal-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-extrabold py-3 rounded-xl transition shadow-lg text-sm uppercase tracking-wide">
+          <i class="fas fa-cash-register mr-2"></i> Bayar Sekarang
+        </button>
+      </div>
+    </div>
+  </div>
 
-// === PEMBAYARAN ===
-const payModal = document.getElementById('pay-modal');
-const payModalAmount = document.getElementById('pay-modal-amount');
-const printModal = document.getElementById('print-modal');
+  <!-- POPUP PEMBAYARAN -->
+  <div id="pay-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center z-50 p-4 hidden">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
+      <div class="p-4 border-b border-zinc-800 bg-zinc-950 flex justify-between items-center">
+        <h3 class="text-sm font-bold text-white"><i class="fas fa-cash-register text-red-500 mr-2"></i> Pembayaran</h3>
+        <button id="close-pay-modal-btn" class="text-zinc-400 hover:text-white text-lg"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="p-4 space-y-3 text-xs">
+        <div class="bg-zinc-950 border border-zinc-800 rounded-xl p-3 flex justify-between items-center">
+          <span class="font-bold text-zinc-400">Total Belanja</span>
+          <span id="pay-modal-total" class="text-xl font-black text-red-500">Rp 0</span>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" id="pay-modal-cash" class="py-2.5 rounded-xl border font-bold border-red-600 bg-red-600 text-white transition-colors text-xs">CASH</button>
+          <button type="button" id="pay-modal-qris" class="py-2.5 rounded-xl border font-bold border-zinc-800 bg-zinc-900 text-zinc-400 transition-colors text-xs">QRIS</button>
+        </div>
 
-function setPayMethod(method) {
-  currentPayMethod = method;
-  const btnCash = document.getElementById('pay-modal-cash');
-  const btnQris = document.getElementById('pay-modal-qris');
-  const cashGroup = document.getElementById('pay-modal-cash-group');
+        <div id="pay-modal-cash-group" class="space-y-2">
+          <label class="font-bold text-zinc-400 block text-[10px]">Uang Diterima</label>
+          <input type="number" id="pay-modal-amount" placeholder="0" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-lg font-black text-zinc-100 focus:outline-none focus:border-red-600">
+          <div class="grid grid-cols-4 gap-1.5 pt-1">
+            <button type="button" onclick="setQuickCash(20000)" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold py-1.5 rounded-lg text-[10px] border border-zinc-700">20K</button>
+            <button type="button" onclick="setQuickCash(50000)" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold py-1.5 rounded-lg text-[10px] border border-zinc-700">50K</button>
+            <button type="button" onclick="setQuickCash(100000)" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold py-1.5 rounded-lg text-[10px] border border-zinc-700">100K</button>
+            <button type="button" onclick="setQuickCash(0)" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold py-1.5 rounded-lg text-[10px] border border-zinc-700">PAS</button>
+          </div>
+        </div>
 
-  if (method === 'CASH') {
-    btnCash.className = "py-2.5 rounded-xl border font-bold border-red-600 bg-red-600 text-white transition-colors text-xs";
-    btnQris.className = "py-2.5 rounded-xl border font-bold border-zinc-800 bg-zinc-900 text-zinc-400 transition-colors text-xs";
-    cashGroup.classList.remove('opacity-40', 'pointer-events-none');
-    payModalAmount.value = '';
-    payModalAmount.dispatchEvent(new Event('input'));
-  } else {
-    btnQris.className = "py-2.5 rounded-xl border font-bold border-blue-600 bg-blue-600 text-white transition-colors text-xs";
-    btnCash.className = "py-2.5 rounded-xl border font-bold border-zinc-800 bg-zinc-900 text-zinc-400 transition-colors text-xs";
-    cashGroup.classList.add('opacity-40', 'pointer-events-none');
-    payModalAmount.value = modalTotal;
-    payModalAmount.dispatchEvent(new Event('input'));
-  }
-}
+        <div class="bg-zinc-950 border border-zinc-800 rounded-xl p-3 flex justify-between items-center">
+          <span class="font-bold text-zinc-400 text-[10px]">Kembalian</span>
+          <span id="pay-modal-change" class="text-lg font-black text-emerald-400">Rp 0</span>
+        </div>
 
-document.getElementById('pay-modal-cash').addEventListener('click', () => setPayMethod('CASH'));
-document.getElementById('pay-modal-qris').addEventListener('click', () => setPayMethod('QRIS'));
+        <button id="pay-modal-confirm" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3 rounded-xl text-sm mt-1"><i class="fas fa-check mr-2"></i> Proses & Cetak Struk</button>
+      </div>
+    </div>
+  </div>
 
-document.getElementById('open-pay-modal-btn').addEventListener('click', () => {
-  if (cart.length === 0) return alert('Keranjang kosong!');
-  modalTotal = cart.reduce((s, i) => s + (i.finalPrice * i.qty), 0);
-  document.getElementById('pay-modal-total').innerText = 'Rp ' + modalTotal.toLocaleString('id-ID');
-  setPayMethod('CASH');
-  payModal.classList.remove('hidden');
-});
+  <!-- POPUP CETAK DAPUR/BAR -->
+  <div id="print-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center z-50 p-4 hidden">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
+      <div class="p-4 border-b border-zinc-800 bg-zinc-950 text-center">
+        <h3 class="text-sm font-bold text-white"><i class="fas fa-check-circle text-emerald-500 mr-2"></i> Transaksi Selesai</h3>
+      </div>
+      <div class="p-5 space-y-3">
+        <p class="text-xs text-zinc-400 text-center mb-2">Pilih cetak struk untuk bagian terkait:</p>
+        <div class="grid grid-cols-2 gap-2">
+          <button id="print-kitchen-btn" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 rounded-xl text-xs transition flex flex-col items-center justify-center">
+            <i class="fas fa-utensils text-xl mb-1"></i> CETAK DAPUR
+          </button>
+          <button id="print-drink-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-xs transition flex flex-col items-center justify-center">
+            <i class="fas fa-glass-martini-alt text-xl mb-1"></i> CETAK BAR
+          </button>
+        </div>
+        <button id="close-print-modal-btn" class="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold py-2.5 rounded-xl text-xs mt-1">Selesai / Tutup</button>
+      </div>
+    </div>
+  </div>
 
-document.getElementById('close-pay-modal-btn').addEventListener('click', () => payModal.classList.add('hidden'));
-payModalAmount.addEventListener('input', (e) => {
-  const pay = parseFloat(e.target.value) || 0;
-  const change = pay - modalTotal;
-  document.getElementById('pay-modal-change').innerText = 'Rp ' + (change > 0 ? change.toLocaleString('id-ID') : '0');
-});
+  <!-- MODAL PENGATURAN PRINTER -->
+  <div id="printer-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center z-50 p-4 hidden">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl">
+      <div class="p-4 border-b border-zinc-800 bg-zinc-950 flex justify-between items-center">
+        <h3 class="text-sm font-bold text-white"><i class="fas fa-print text-amber-500 mr-2"></i> Pengaturan Printer</h3>
+        <button id="close-printer-modal-btn" class="text-zinc-400 hover:text-white text-lg"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="p-5 space-y-4 text-xs">
+        
+        <!-- Info Toko -->
+        <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 space-y-2">
+          <h4 class="font-bold text-white border-b border-zinc-800 pb-1.5 text-[11px]">Informasi Toko (Untuk Struk)</h4>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] font-bold text-zinc-400 block mb-1">Nama Toko</label>
+              <input type="text" id="cfg-store-name" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-1.5 text-white">
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-zinc-400 block mb-1">Telepon</label>
+              <input type="text" id="cfg-store-phone" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-1.5 text-white">
+            </div>
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-zinc-400 block mb-1">Alamat</label>
+            <input type="text" id="cfg-store-address" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-1.5 text-white">
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-zinc-400 block mb-1">Footer Struk</label>
+            <input type="text" id="cfg-store-footer" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-1.5 text-white">
+          </div>
+        </div>
 
-window.setQuickCash = (amt) => {
-  if(currentPayMethod !== 'CASH') return;
-  payModalAmount.value = amt === 0 ? modalTotal : amt;
-  payModalAmount.dispatchEvent(new Event('input'));
-};
+        <!-- Setup Printer -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 space-y-2">
+            <h4 class="font-bold text-amber-400 border-b border-zinc-800 pb-1.5 text-[11px]">Printer Dapur (Makanan)</h4>
+            <div>
+              <label class="text-[10px] font-bold text-zinc-400 block mb-1">Metode Cetak</label>
+              <select id="cfg-print-kitchen" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-1.5 text-white text-xs">
+                <option value="rawbt">RawBT (Bluetooth Android)</option>
+                <option value="browser">Browser (Print Dialog)</option>
+              </select>
+            </div>
+          </div>
 
-document.getElementById('pay-modal-confirm').addEventListener('click', async () => {
-  const pay = currentPayMethod === 'QRIS' ? modalTotal : (parseFloat(payModalAmount.value) || 0);
-  if (pay < modalTotal) return alert('Uang kurang!');
-  const cust = document.getElementById('customer-select').value || "Pelanggan Umum";
-  const tbl = document.getElementById('table-no').value || "-";
-  
-  try {
-    const [newOrder] = await sql`INSERT INTO orders (cashier_name, customer_name, table_number, payment_method, status, total_amount, paid_amount, change_amount) 
-              VALUES (${activeCashierName}, ${cust}, ${tbl}, ${currentPayMethod}, 'COMPLETED', ${modalTotal}, ${pay}, ${pay - modalTotal})
-              RETURNING id`;
-    
-    lastTransactionId = newOrder.id;
+          <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 space-y-2">
+            <h4 class="font-bold text-blue-400 border-b border-zinc-800 pb-1.5 text-[11px]">Printer Bar (Minuman)</h4>
+            <div>
+              <label class="text-[10px] font-bold text-zinc-400 block mb-1">Metode Cetak</label>
+              <select id="cfg-print-bar" class="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-1.5 text-white text-xs">
+                <option value="rawbt">RawBT (Bluetooth Android)</option>
+                <option value="browser">Browser (Print Dialog)</option>
+              </select>
+            </div>
+          </div>
+        </div>
 
-    for (const item of cart) {
-      await sql`INSERT INTO order_items (order_id, product_name, qty, price, discount_amount, item_note, category) 
-                VALUES (${lastTransactionId}, ${item.name}, ${item.qty}, ${item.finalPrice}, 0, ${item.itemNote || ''}, ${item.category})`;
-    }
+      </div>
+      <div class="p-4 border-t border-zinc-800 bg-zinc-950 flex justify-end">
+        <button id="save-printer-settings-btn" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-5 py-2 rounded-xl text-xs shadow transition">Simpan Pengaturan</button>
+      </div>
+    </div>
+  </div>
 
-    payModal.classList.add('hidden');
-    printModal.classList.remove('hidden');
-    
-  } catch (err) { 
-    console.error("Error Database:", err);
-    alert("Gagal simpan ke DB. Cek koneksi internet atau konsol browser."); 
-  }
-});
+  <!-- MODAL RIWAYAT KASIR (IFRAME) -->
+  <div id="history-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 hidden">
+    <div class="relative w-full max-w-5xl h-[85vh] bg-zinc-900 rounded-3xl overflow-hidden shadow-2xl">
+      <iframe id="history-iframe" src="" class="w-full h-full border-0 bg-transparent"></iframe>
+    </div>
+  </div>
 
-// === PENGATURAN PRINTER ===
-document.getElementById('open-printer-settings-btn').addEventListener('click', () => {
-  document.getElementById('cfg-store-name').value = printerConfig.storeName;
-  document.getElementById('cfg-store-phone').value = printerConfig.storePhone;
-  document.getElementById('cfg-store-address').value = printerConfig.storeAddress;
-  document.getElementById('cfg-store-footer').value = printerConfig.storeFooter;
-  document.getElementById('cfg-print-kitchen').value = printerConfig.printKitchen;
-  document.getElementById('cfg-print-bar').value = printerConfig.printBar;
-  document.getElementById('printer-modal').classList.remove('hidden');
-});
-
-document.getElementById('close-printer-modal-btn').addEventListener('click', () => {
-  document.getElementById('printer-modal').classList.add('hidden');
-});
-
-document.getElementById('save-printer-settings-btn').addEventListener('click', () => {
-  printerConfig = {
-    storeName: document.getElementById('cfg-store-name').value.trim() || "CHICKEN FIRE MATARAM",
-    storePhone: document.getElementById('cfg-store-phone').value.trim(),
-    storeAddress: document.getElementById('cfg-store-address').value.trim(),
-    storeFooter: document.getElementById('cfg-store-footer').value.trim(),
-    printKitchen: document.getElementById('cfg-print-kitchen').value,
-    printBar: document.getElementById('cfg-print-bar').value
-  };
-  localStorage.setItem('cfm_printer_cfg', JSON.stringify(printerConfig));
-  alert("Pengaturan Printer Berhasil Disimpan!");
-  document.getElementById('printer-modal').classList.add('hidden');
-});
-
-// === FUNGSI CETAK ===
-function printReceipt(type) {
-  const cust = document.getElementById('customer-select').value || "Pelanggan Umum";
-  const tbl = document.getElementById('table-no').value || "-";
-  const now = new Date().toLocaleString('id-ID');
-  
-  let printText = `${printerConfig.storeName}\n`;
-  printText += `${printerConfig.storeAddress}\n`;
-  printText += `Telp: ${printerConfig.storePhone}\n`;
-  printText += `--------------------------------\n`;
-  printText += `--- ${type === 'kitchen' ? 'SLIP DAPUR (MAKANAN)' : 'SLIP BAR (MINUMAN)'} ---\n`;
-  printText += `ID: #${lastTransactionId}\nWaktu: ${now}\nKasir: ${activeCashierName}\nCust: ${cust} (${tbl})\n`;
-  printText += `--------------------------------\n`;
-
-  const filteredItems = cart.filter(i => type === 'kitchen' ? (i.category === 'makanan' || i.category === 'paket') : (i.category === 'minuman' || i.category === 'paket'));
-
-  if (filteredItems.length === 0) {
-    alert(`Tidak ada pesanan untuk kategori ${type === 'kitchen' ? 'Dapur' : 'Bar'}.`);
-    return;
-  }
-
-  filteredItems.forEach(i => {
-    printText += `${i.qty}x ${i.name}\n`;
-    if(i.itemNote) printText += `   *Catatan: ${i.itemNote}\n`;
-  });
-  printText += `--------------------------------\n`;
-  printText += `${printerConfig.storeFooter}\n\n\n`;
-
-  const printMethod = type === 'kitchen' ? printerConfig.printKitchen : printerConfig.printBar;
-
-  if (printMethod === 'rawbt') {
-    window.location.href = "intent:" + encodeURIComponent(printText) + "#Intent;scheme=rawbt;package=ru.a404m.rawbt;end;";
-  } else {
-    const printWindow = window.open('', '', 'width=400,height=600');
-    printWindow.document.write('<pre style="font-family: monospace; font-size: 12px; white-space: pre-wrap; padding: 10px;">' + printText + '</pre>');
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => { printWindow.print(); }, 500);
-  }
-}
-
-document.getElementById('print-kitchen-btn').addEventListener('click', () => printReceipt('kitchen'));
-document.getElementById('print-drink-btn').addEventListener('click', () => printReceipt('drink'));
-
-document.getElementById('close-print-modal-btn').addEventListener('click', () => {
-  cart = []; 
-  renderCart();
-  printModal.classList.add('hidden');
-  document.getElementById('table-no').value = '';
-  document.getElementById('customer-select').value = 'Pelanggan Umum';
-});
-
-// === LOGIKA RIWAYAT POP-UP (IFRAME) ===
-const historyModal = document.getElementById('history-modal');
-const historyIframe = document.getElementById('history-iframe');
-
-document.getElementById('open-history-btn').addEventListener('click', () => {
-  historyIframe.src = 'riwayat_kasir.html'; // Muat halaman riwayat ke dalam iframe
-  historyModal.classList.remove('hidden');
-});
-
-// Mendengarkan pesan dari dalam iframe (saat tombol X di riwayat diklik)
-window.addEventListener('message', (event) => {
-  if (event.data === 'closeHistory') {
-    historyModal.classList.add('hidden');
-    historyIframe.src = ''; // Kosongkan src agar koneksi DB terputus (hemat memori)
-  }
-});
+  <script type="module" src="kasir.js"></script>
+</body>
+</html>
