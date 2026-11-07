@@ -128,10 +128,11 @@
               <th class="p-4">Metode</th>
               <th class="p-4 text-right">Total</th>
               <th class="p-4 text-center">Status</th>
+              <th class="p-4 text-center">Aksi</th> <!-- KOLOM BARU UNTUK DELETE -->
             </tr>
           </thead>
           <tbody id="transaction-rows" class="divide-y divide-zinc-800/60">
-            <tr><td colspan="5" class="text-center py-8">Memuat data...</td></tr>
+            <tr><td colspan="6" class="text-center py-8">Memuat data...</td></tr>
           </tbody>
         </table>
       </div>
@@ -162,7 +163,7 @@
         calculateBestSeller(allItems);
       } catch (err) {
         console.error(err);
-        document.getElementById('transaction-rows').innerHTML = `<tr><td colspan="5" class="text-center py-8 text-red-500">Gagal memuat data: ${err.message}</td></tr>`;
+        document.getElementById('transaction-rows').innerHTML = `<tr><td colspan="6" class="text-center py-8 text-red-500">Gagal memuat data: ${err.message}</td></tr>`;
       }
     }
 
@@ -229,7 +230,7 @@
 
       tbody.innerHTML = '';
       if (!filteredOrders.length) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-zinc-500">Tidak ada transaksi di tanggal ini.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-zinc-500">Tidak ada transaksi di tanggal ini.</td></tr>';
         return;
       }
 
@@ -250,10 +251,34 @@
             <td class="p-4 text-center">
                <span class="text-emerald-400 font-bold text-xs bg-emerald-950/50 px-3 py-1 rounded-lg border border-emerald-900/50">SUKSES</span>
             </td>
+            <!-- TOMBOL DELETE -->
+            <td class="p-4 text-center">
+              <button onclick="deleteOrder(${o.id})" class="bg-zinc-800 hover:bg-red-900 text-zinc-400 hover:text-red-100 border border-zinc-700 px-3 py-1.5 rounded-lg text-xs font-bold transition">
+                <i class="fas fa-trash-alt mr-1"></i> Hapus
+              </button>
+            </td>
           </tr>
         `;
       });
     }
+
+    // === FUNGSI HAPUS TRANSAKSI (PERMANEN) ===
+    window.deleteOrder = async (id) => {
+      if (!confirm("Yakin ingin menghapus transaksi ini secara permanen?\nData akan hilang dari pembukuan dan tidak bisa dikembalikan.")) return;
+
+      try {
+        // Hapus item terkait dulu (karena ada foreign key)
+        await sql`DELETE FROM order_items WHERE order_id = ${id}`;
+        // Hapus pesanan utama
+        await sql`DELETE FROM orders WHERE id = ${id}`;
+        
+        // Muat ulang data agar omset dan tabel terupdate
+        loadData(); 
+      } catch (err) {
+        console.error(err);
+        alert("Gagal menghapus transaksi: " + err.message);
+      }
+    };
 
     function initChart() {
       const ctx = document.getElementById('cashFlowChart').getContext('2d');
